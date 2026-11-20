@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-team="all">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estudos de cibersegurança · Blue e Red team</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%2250%22 height=%22100%22 fill=%22%235b9dff%22/><rect x=%2250%22 width=%2250%22 height=%22100%22 fill=%22%23ff5a5f%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #121829;
+    --ink: #e6eaf5;
+    --muted: #8d97b5;
+    --line: #232c47;
+    --blue: #5b9dff;
+    --red: #ff5a5f;
+    --purple: #a98bff;
+    --accent: var(--purple);
+    --accent-ink: #0a0e1a;
+    --mark: rgba(242, 208, 34, .32);
+    --mark-solid: #f2d022;
+    --danger: #ff8a80;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f7;
+    --surface: #ffffff;
+    --ink: #151b30;
+    --muted: #566080;
+    --line: #d6dcea;
+    --blue: #1f56d6;
+    --red: #c8262d;
+    --purple: #6a3fd1;
+    --accent-ink: #ffffff;
+    --mark: #ffe45c;
+    --mark-solid: #ffe45c;
+    --danger: #b3261e;
+    color-scheme: light;
+  }
+  :root[data-team="blue"] { --accent: var(--blue); }
+  :root[data-team="red"] { --accent: var(--red); }
+  :root[data-team="blue"][data-theme="dark"], :root[data-team="red"][data-theme="dark"] { --accent-ink: #0a0e1a; }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px; line-height: 1.5; min-height: 100vh;
+  }
+  h1, h2, .display { font-family: "Chakra Petch", "IBM Plex Sans", system-ui, sans-serif; margin: 0; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* Topo */
+  .top { display: flex; flex-wrap: wrap; gap: 1.25rem 2rem; align-items: flex-end; justify-content: space-between; padding-bottom: 1.5rem; border-bottom: 1px solid var(--line); }
+  .top h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 700; line-height: 1.05; letter-spacing: -.01em; }
+  .top p { margin: .4rem 0 0; color: var(--muted); }
+  .teams { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; padding: 4px; background: var(--surface); gap: 4px; }
+  .teams button {
+    border: 0; background: transparent; padding: .55rem 1.1rem; border-radius: 7px;
+    font-family: "Chakra Petch", sans-serif; font-weight: 600; letter-spacing: .01em; color: var(--muted);
+  }
+  .teams button:hover { color: var(--ink); }
+  .teams button[aria-pressed="true"] { color: var(--accent-ink); }
+  .teams button[data-t="all"][aria-pressed="true"] { background: var(--purple); }
+  .teams button[data-t="blue"][aria-pressed="true"] { background: var(--blue); color: #fff; }
+  .teams button[data-t="red"][aria-pressed="true"] { background: var(--red); color: #fff; }
+  :root[data-theme="dark"] .teams button[data-t="blue"][aria-pressed="true"],
+  :root[data-theme="dark"] .teams button[data-t="red"][aria-pressed="true"] { color: #0a0e1a; }
+
+  .switch { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+  .sections { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; padding: 4px; background: var(--surface); gap: 4px; }
+  .sections button { border: 0; background: transparent; padding: .55rem 1.1rem; border-radius: 7px; font-family: "Chakra Petch", sans-serif; font-weight: 600; color: var(--muted); }
+  .sections button:hover { color: var(--ink); }
+  .sections button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+  .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 2.5rem; margin-top: 2rem; }
+  aside { position: sticky; top: 1.5rem; align-self: start; }
+  aside h2 { font-size: .95rem; font-weight: 600; color: var(--muted); margin-bottom: .6rem; }
+
+  .prog { display: grid; gap: .85rem; margin-bottom: 2rem; }
+  .prog .row { display: flex; justify-content: space-between; font-size: .9rem; font-weight: 500; }
+  .prog .row span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bar-bg { height: 6px; background: var(--line); border-radius: 3px; margin-top: .3rem; overflow: hidden; }
+  .bar-fg { height: 100%; width: 0; border-radius: 3px; transition: width .3s; }
+  .bar-fg.b { background: var(--blue); }
+  .bar-fg.r { background: var(--red); }
+
+  .cats { list-style: none; padding: 0; margin: 0; display: grid; gap: .15rem; }
+  .cats button {
+    width: 100%; display: flex; justify-content: space-between; gap: .5rem;
+    padding: .5rem .75rem; border: 0; border-radius: 8px; background: transparent; text-align: left;
+  }
+  .cats button:hover { background: var(--surface); }
+  .cats button[aria-current="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .cats .n { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .cats button[aria-current="true"] .n { color: inherit; opacity: .75; }
+  .tools { margin-top: 2rem; display: flex; flex-wrap: wrap; gap: .5rem; }
+  .conn { color: var(--muted); font-size: .85rem; margin: .75rem 0 0; overflow-wrap: anywhere; }
+
+  .btn { border: 1px solid var(--line); background: var(--surface); padding: .5rem .9rem; border-radius: 8px; font-weight: 500; }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .btn.primary:hover { filter: brightness(1.1); }
+  .btn.danger { color: var(--danger); }
+  .btn:disabled { opacity: .6; cursor: progress; }
+
+  .filters { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+  .filters input[type="search"] { flex: 1 1 200px; }
+  input, select, textarea { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: .55rem .75rem; width: 100%; }
+  .filters select { width: auto; }
+  .count { color: var(--muted); font-size: .9rem; margin: 1.25rem 0 .5rem; }
+
+  .list { list-style: none; padding: 0; margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .item { position: relative; display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: .9rem; align-items: center; padding: .9rem 1rem .9rem 1.4rem; }
+  .item + .item { border-top: 1px solid var(--line); }
+  .item::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; }
+  .item[data-team="blue"]::before { background: var(--blue); }
+  .item[data-team="red"]::before { background: var(--red); }
+  .item[data-team="both"]::before { background: linear-gradient(var(--blue) 50%, var(--red) 50%); }
+
+  .state { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--muted); background: transparent; padding: 0; display: grid; place-items: center; overflow: hidden; }
+  .state[data-s="doing"] { border-color: var(--ink); background: linear-gradient(90deg, var(--mark-solid) 50%, transparent 50%); }
+  .state[data-s="done"] { border-color: var(--accent); background: var(--accent); }
+  .state[data-s="done"]::after { content: "✓"; color: var(--accent-ink); font-size: .85rem; font-weight: 700; }
+
+  .ico { width: 28px; height: 28px; border-radius: 6px; background: var(--bg); display: grid; place-items: center; overflow: hidden; font-weight: 700; color: var(--muted); }
+  .ico img { width: 20px; height: 20px; }
+
+  .main { min-width: 0; }
+  .title { font-weight: 600; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+  .title:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .item[data-s="doing"] .title { background: linear-gradient(transparent 55%, var(--mark) 55%, var(--mark) 92%, transparent 92%); padding: 0 .15em; margin: 0 -.15em; }
+  .item[data-s="done"] .title { color: var(--muted); }
+  .meta { display: flex; flex-wrap: wrap; gap: .35rem .5rem; align-items: center; color: var(--muted); font-size: .85rem; margin-top: .25rem; }
+  .chip { padding: .05rem .55rem; border-radius: 999px; background: var(--bg); color: var(--ink); border: 1px solid var(--line); }
+  .chip.t-blue { color: var(--blue); border-color: var(--blue); }
+  .chip.t-red { color: var(--red); border-color: var(--red); }
+  .chip.t-both { color: var(--purple); border-color: var(--purple); }
+  .note { margin: .35rem 0 0; font-size: .92rem; color: var(--muted); overflow-wrap: anywhere; }
+
+  .acts { display: flex; gap: .25rem; }
+  .acts button { border: 0; background: transparent; color: var(--muted); padding: .35rem .55rem; border-radius: 6px; font-size: .85rem; }
+  .acts button:hover { background: var(--bg); color: var(--ink); }
+  .acts .del:hover { color: var(--danger); }
+
+  .empty { padding: 3rem 1.5rem; text-align: center; color: var(--muted); }
+  .empty h2 { color: var(--ink); font-size: 1.3rem; margin-bottom: .4rem; }
+  .empty .btn { margin: 1rem .25rem 0; }
+
+  dialog { border: 1px solid var(--line); border-radius: 14px; padding: 1.5rem; background: var(--surface); color: var(--ink); width: min(500px, calc(100vw - 2rem)); max-height: calc(100vh - 2rem); overflow-y: auto; }
+  dialog::backdrop { background: rgba(4, 6, 14, .65); }
+  dialog h2 { font-size: 1.4rem; margin-bottom: 1rem; }
+  .field { display: grid; gap: .3rem; margin-bottom: .9rem; }
+  .field label { font-weight: 500; font-size: .92rem; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+  .row-btns { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1.25rem; flex-wrap: wrap; }
+  .err { color: var(--danger); font-size: .88rem; min-height: 1.2em; }
+  .help { color: var(--muted); font-size: .9rem; margin: 0 0 .75rem; }
+  ol.help { padding-left: 1.2rem; }
+  ol.help li { margin-bottom: .25rem; }
+
+  .toast { position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: .6rem 1rem; border-radius: 8px; font-size: .92rem; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: calc(100vw - 2rem); }
+  .toast.on { opacity: 1; }
+
+  @media (max-width: 780px) {
+    .wrap { padding: 1.25rem 1rem 3rem; }
+    .layout { grid-template-columns: 1fr; gap: 1.5rem; }
+    aside { position: static; }
+    .cats { display: flex; overflow-x: auto; gap: .4rem; padding-bottom: .25rem; }
+    .cats li { flex: none; }
+    .cats button { border: 1px solid var(--line); background: var(--surface); width: auto; }
+    .item { grid-template-columns: auto minmax(0, 1fr); }
+    .ico { display: none; }
+    .acts { grid-column: 2; }
+    .two { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { .toast, .bar-fg { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Estudos de cibersegurança</h1>
+      <p id="sub">Seus links de Blue team e Red team, num só lugar.</p>
+    </div>
+    <div class="switch">
+      <div class="sections" role="group" aria-label="Seção">
+        <button type="button" data-sec="estudo" aria-pressed="true">Estudos</button>
+        <button type="button" data-sec="vaga" aria-pressed="false">Vagas</button>
+      </div>
+      <div class="teams" role="group" aria-label="Filtrar por time">
+        <button type="button" data-t="all" aria-pressed="true">Todos</button>
+        <button type="button" data-t="blue" aria-pressed="false">Blue team</button>
+        <button type="button" data-t="red" aria-pressed="false">Red team</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <div class="prog" aria-label="Progresso">
+        <div><div class="row"><span id="pbL">Blue team</span><span id="pbT"></span></div><div class="bar-bg"><div class="bar-fg b" id="pbB"></div></div></div>
+        <div id="prW"><div class="row"><span>Red team</span><span id="prT"></span></div><div class="bar-bg"><div class="bar-fg r" id="prB"></div></div></div>
+      </div>
+      <h2 id="catTitle">Matérias</h2>
+      <ul class="cats" id="cats"></ul>
+      <div class="tools">
+        <button class="btn" id="export" type="button">Exportar</button>
+        <button class="btn" id="import" type="button">Importar</button>
+        <button class="btn" id="theme" type="button" aria-label="Alternar tema claro e escuro">Tema</button>
+        <button class="btn" id="connect" type="button">GitHub</button>
+        <input type="file" id="file" accept="application/json" hidden>
+      </div>
+      <p class="conn" id="conn"></p>
+    </aside>
+
+    <main>
+      <div class="filters">
+        <input type="search" id="q" placeholder="Buscar por título, site ou anotação" aria-label="Buscar links">
+        <select id="typeFilter" aria-label="Filtrar por tipo"><option value="">Todos os tipos</option></select>
+        <select id="statusFilter" aria-label="Filtrar por status">
+          <option value="">Todos os status</option>
+          <option value="todo">A estudar</option>
+          <option value="doing">Estudando</option>
+          <option value="done">Concluído</option>
+        </select>
+        <button class="btn primary" id="add" type="button">Adicionar link</button>
+      </div>
+      <div class="count" id="count" aria-live="polite"></div>
+      <ul class="list" id="list"></ul>
+    </main>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <form id="form" method="dialog" novalidate>
+    <h2 id="dlgTitle">Adicionar link</h2>
+    <div class="field">
+      <label for="fUrl">Endereço do site</label>
+      <input id="fUrl" type="text" inputmode="url" placeholder="https://exemplo.com/aula" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="fTitle">Título</label>
+      <input id="fTitle" type="text" placeholder="Ex.: Active Directory na prática" autocomplete="off">
+    </div>
+    <div class="two">
+      <div class="field">
+        <label for="fTeam">Time</label>
+        <select id="fTeam">
+          <option value="blue">Blue team (defesa)</option>
+          <option value="red">Red team (ataque)</option>
+          <option value="both">Blue + Red</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fType">Tipo</label>
+        <select id="fType"></select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="fCat" id="lCat">Matéria</label>
+      <input id="fCat" type="text" list="catList" placeholder="Ex.: Pentest web, SIEM, Forense" autocomplete="off">
+      <datalist id="catList"></datalist>
+    </div>
+    <div class="field">
+      <label for="fNote">Anotação (opcional)</label>
+      <textarea id="fNote" rows="2" placeholder="O que você quer aprender com esse link?"></textarea>
+    </div>
+    <div class="err" id="err" role="alert"></div>
+    <div class="row-btns">
+      <button class="btn" type="button" id="cancel">Cancelar</button>
+      <button class="btn primary" type="submit" id="save">Salvar link</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="cfg">
+  <form id="cfgForm" method="dialog" novalidate>
+    <h2>Conectar ao GitHub</h2>
+    <p class="help">Para salvar links direto no seu repositório (e ver os mesmos links em qualquer aparelho), crie um token que só tenha acesso a este repositório:</p>
+    <ol class="help">
+      <li>No GitHub: <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</b>.</li>
+      <li>Em <b>Repository access</b>, escolha <b>Only select repositories</b> e marque o repositório do site.</li>
+      <li>Em <b>Permissions → Repository permissions</b>, coloque <b>Contents: Read and write</b>.</li>
+      <li>Gere o token e cole abaixo.</li>
+    </ol>
+    <div class="field"><label for="cOwner">Usuário do GitHub</label><input id="cOwner" type="text" autocomplete="off"></div>
+    <div class="field"><label for="cRepo">Nome do repositório</label><input id="cRepo" type="text" autocomplete="off"></div>
+    <div class="field"><label for="cToken">Token</label><input id="cToken" type="password" autocomplete="off" placeholder="github_pat_..."></div>
+    <p class="help">O token fica salvo só neste navegador. Use apenas em aparelhos seus.</p>
+    <div class="err" id="cErr" role="alert"></div>
+    <div class="row-btns">
+      <button class="btn danger" type="button" id="cOff">Desconectar</button>
+      <button class="btn" type="button" id="cCancel">Cancelar</button>
+      <button class="btn primary" type="submit">Conectar</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  var STATUS_KEY = "links-de-estudo-status";
+  var CFG_KEY = "links-de-estudo-github";
+  var THEME_KEY = "links-de-estudo-tema";
+  var TEAM_KEY = "links-de-estudo-time";
+  var SECTION_KEY = "links-de-estudo-secao";
+  var FILE = "links.json";
+  var STATUS = ["todo", "doing", "done"];
+  var LABELS = {
+    estudo: { todo: "A estudar", doing: "Estudando", done: "Concluído" },
+    vaga: { todo: "Para ver", doing: "Candidatado", done: "Arquivada" }
+  };
+  var JOB_TYPES = ["Site de vagas", "Vaga específica", "Empresa", "Comunidade", "Newsletter", "Outro"];
+  var JOB_CATS = ["Analista SOC", "Pentester", "Analista de segurança", "Resposta a incidentes", "Threat intelligence", "AppSec", "Cloud security", "GRC e conformidade", "Estágio", "Júnior", "Remoto", "Sites de vagas"];
+  var JOB_STARTER = [
+    { title: "LinkedIn Vagas", url: "https://www.linkedin.com/jobs/", note: "Busque por segurança da informação, SOC ou pentest." },
+    { title: "Gupy", url: "https://portal.gupy.io", note: "" },
+    { title: "Vagas.com", url: "https://www.vagas.com.br", note: "" },
+    { title: "Indeed Brasil", url: "https://br.indeed.com", note: "" },
+    { title: "Glassdoor Brasil", url: "https://www.glassdoor.com.br", note: "Veja também salários e avaliações das empresas." },
+    { title: "InfoJobs", url: "https://www.infojobs.com.br", note: "" },
+    { title: "Catho", url: "https://www.catho.com.br", note: "" },
+    { title: "Remote OK", url: "https://remoteok.com", note: "Vagas remotas internacionais." },
+    { title: "We Work Remotely", url: "https://weworkremotely.com", note: "" },
+    { title: "Wellfound", url: "https://wellfound.com", note: "Vagas em startups." }
+  ].map(function (j) { return { title: j.title, url: j.url, team: "both", type: "Site de vagas", cat: "Sites de vagas", note: j.note }; });
+  var TEAMS = { blue: "Blue team", red: "Red team", both: "Blue + Red" };
+  var TYPES = ["Curso", "Laboratório", "Ferramenta", "Documentação", "Vídeo", "Artigo", "CTF", "Certificação", "Outro"];
+  var CATS = {
+    blue: ["SOC e monitoramento", "Resposta a incidentes", "Forense digital", "Threat hunting", "Análise de malware", "SIEM e logs", "Engenharia de detecção", "Hardening", "Threat intelligence"],
+    red: ["Pentest web", "Pentest de redes", "Active Directory", "Exploração", "Escalação de privilégios", "Engenharia social", "Red team e C2", "Bug bounty", "OSINT"],
+    both: ["Redes", "Linux", "Windows", "Criptografia", "Cloud", "Scripts e programação", "CTF", "Frameworks", "Certificações"]
+  };
+  var STARTER = [
+    { title: "MITRE ATT&CK", url: "https://attack.mitre.org", team: "both", type: "Documentação", cat: "Frameworks", note: "Mapa de táticas e técnicas de atacantes." },
+    { title: "NIST Cybersecurity Framework", url: "https://www.nist.gov/cyberframework", team: "blue", type: "Documentação", cat: "Frameworks", note: "" },
+    { title: "OWASP Top 10", url: "https://owasp.org/www-project-top-ten/", team: "both", type: "Documentação", cat: "Pentest web", note: "As falhas mais comuns em aplicações web." },
+    { title: "PortSwigger Web Security Academy", url: "https://portswigger.net/web-security", team: "red", type: "Laboratório", cat: "Pentest web", note: "Labs gratuitos de ataques web." },
+    { title: "TryHackMe", url: "https://tryhackme.com", team: "both", type: "Laboratório", cat: "CTF", note: "Trilhas guiadas para ataque e defesa." },
+    { title: "Hack The Box Academy", url: "https://academy.hackthebox.com", team: "red", type: "Curso", cat: "Pentest de redes", note: "" },
+    { title: "OverTheWire Wargames", url: "https://www.overthewire.org/wargames/", team: "red", type: "CTF", cat: "Linux", note: "Comece pelo Bandit." },
+    { title: "picoCTF", url: "https://picoctf.org", team: "both", type: "CTF", cat: "CTF", note: "" },
+    { title: "GTFOBins", url: "https://gtfobins.github.io", team: "red", type: "Ferramenta", cat: "Escalação de privilégios", note: "Binários Unix que ajudam a escalar privilégios." },
+    { title: "LOLBAS", url: "https://lolbas-project.github.io", team: "both", type: "Ferramenta", cat: "Windows", note: "Binários do Windows usados por atacantes e detectados por defensores." },
+    { title: "Exploit-DB", url: "https://www.exploit-db.com", team: "red", type: "Ferramenta", cat: "Exploração", note: "" },
+    { title: "Atomic Red Team", url: "https://atomicredteam.io", team: "both", type: "Ferramenta", cat: "Engenharia de detecção", note: "Testes mapeados no ATT&CK para validar detecções." },
+    { title: "CyberChef", url: "https://gchq.github.io/CyberChef", team: "both", type: "Ferramenta", cat: "Criptografia", note: "Codificar, decodificar e analisar dados." },
+    { title: "LetsDefend", url: "https://letsdefend.io", team: "blue", type: "Laboratório", cat: "SOC e monitoramento", note: "Simulador de analista SOC." },
+    { title: "CyberDefenders", url: "https://cyberdefenders.org", team: "blue", type: "Laboratório", cat: "Forense digital", note: "" },
+    { title: "Blue Team Labs Online", url: "https://blueteamlabs.online", team: "blue", type: "Laboratório", cat: "Resposta a incidentes", note: "" },
+    { title: "Malware Traffic Analysis", url: "https://www.malware-traffic-analysis.net", team: "blue", type: "Laboratório", cat: "Análise de malware", note: "Exercícios com capturas de rede reais." },
+    { title: "ANY.RUN", url: "https://any.run", team: "blue", type: "Ferramenta", cat: "Análise de malware", note: "Sandbox interativo." },
+    { title: "Sigma (regras de detecção)", url: "https://github.com/SigmaHQ/sigma", team: "blue", type: "Documentação", cat: "Engenharia de detecção", note: "" },
+    { title: "Security Onion", url: "https://securityonion.net", team: "blue", type: "Ferramenta", cat: "SIEM e logs", note: "" },
+    { title: "Wazuh", url: "https://wazuh.com", team: "blue", type: "Ferramenta", cat: "SIEM e logs", note: "" },
+    { title: "Wireshark", url: "https://www.wireshark.org", team: "both", type: "Ferramenta", cat: "Redes", note: "" }
+  ];
+
+  var links = [], statusMap = {}, sha = null, section = "estudo";
+  var cfg = { owner: "", repo: "", token: "" };
+  var teamFilter = "all", filterCat = "", editingId = null;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function readLS(k, fb) { try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : fb; } catch (e) { return fb; } }
+  function writeLS(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function guessRepo() {
+    var h = location.hostname, o = { owner: "", repo: "" };
+    if (/\.github\.io$/i.test(h)) { o.owner = h.split(".")[0]; o.repo = location.pathname.split("/")[1] || h; }
+    return o;
+  }
+  function statusOf(l) { return statusMap[l.id] || "todo"; }
+  function connected() { return !!(cfg.token && cfg.owner && cfg.repo); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function normalizeUrl(u) {
+    u = (u || "").trim(); if (!u) return "";
+    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    try { return new URL(u).href; } catch (e) { return ""; }
+  }
+  function host(u) { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return u; } }
+  function inSec(l) { return l.section === section; }
+  function typesFor(sec) { return sec === "vaga" ? JOB_TYPES : TYPES; }
+  function fillTypes(sel, withAll) {
+    sel.innerHTML = "";
+    if (withAll) { var a = document.createElement("option"); a.value = ""; a.textContent = "Todos os tipos"; sel.appendChild(a); }
+    typesFor(section).forEach(function (t) { var o = document.createElement("option"); o.value = t; o.textContent = t; sel.appendChild(o); });
+  }
+  function inTeam(l, t) { return t === "all" || l.team === t || l.team === "both"; }
+
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.classList.add("on");
+    clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove("on"); }, 2600);
+  }
+
+  /* ---------- GitHub (links.json no repositório) ---------- */
+  function b64encode(str) { var by = new TextEncoder().encode(str), bin = ""; by.forEach(function (b) { bin += String.fromCharCode(b); }); return btoa(bin); }
+  function b64decode(b64) { var bin = atob(b64.replace(/\s/g, "")), by = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) by[i] = bin.charCodeAt(i); return new TextDecoder().decode(by); }
+  function api(method, body) {
+    return fetch("https://api.github.com/repos/" + encodeURIComponent(cfg.owner) + "/" + encodeURIComponent(cfg.repo) + "/contents/" + FILE, {
+      method: method,
+      headers: { "Accept": "application/vnd.github+json", "Authorization": "Bearer " + cfg.token },
+      body: body ? JSON.stringify(body) : undefined
+    });
+  }
+  function cleanList(data) {
+    if (!Array.isArray(data)) return [];
+    return data.filter(function (d) { return d && d.url; }).map(function (d) {
+      return {
+        id: String(d.id || uid()), url: String(d.url), title: String(d.title || host(d.url)),
+        section: d.section === "vaga" ? "vaga" : "estudo", team: TEAMS[d.team] ? d.team : "both", type: String(d.type || ""),
+        cat: String(d.cat || ""), note: String(d.note || ""), added: Number(d.added) || Date.now()
+      };
+    });
+  }
+  function load() {
+    if (connected()) {
+      return api("GET").then(function (r) {
+        if (r.status === 404) { links = []; sha = null; return; }
+        if (!r.ok) throw new Error(r.status === 401 ? "token" : "api");
+        return r.json().then(function (j) { sha = j.sha; links = cleanList(JSON.parse(b64decode(j.content) || "[]")); });
+      });
+    }
+    return fetch(FILE, { cache: "no-store" }).then(function (r) {
+      if (r.status === 404) { links = []; return; }
+      if (!r.ok) throw new Error("fetch");
+      return r.json().then(function (d) { links = cleanList(d); });
+    });
+  }
+  function commit(next, msg) {
+    if (!connected()) { openCfg(); return Promise.resolve(false); }
+    toast("Salvando no GitHub...");
+    var body = { message: msg, content: b64encode(JSON.stringify(next, null, 2) + "\n") };
+    if (sha) body.sha = sha;
+    return api("PUT", body).then(function (r) {
+      if (!r.ok) {
+        if (r.status === 401 || r.status === 403 || r.status === 404) throw new Error("Token sem permissão ou repositório errado. Confira em GitHub.");
+        if (r.status === 409 || r.status === 422) throw new Error("O arquivo mudou no GitHub. Recarregue a página e tente de novo.");
+        throw new Error("Não foi possível salvar (erro " + r.status + ").");
+      }
+      return r.json().then(function (j) { sha = j.content.sha; links = next; toast("Salvo no seu repositório"); return true; });
+    }).catch(function (e) { toast(e.message || "Erro de conexão ao salvar."); return false; });
+  }
+
+  /* ---------- Renderização ---------- */
+  function renderTeams() {
+    document.documentElement.setAttribute("data-team", teamFilter);
+    document.querySelectorAll(".teams button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.t === teamFilter));
+    });
+  }
+  function renderProgress() {
+    var mine = links.filter(inSec);
+    if (section === "vaga") {
+      var seen = mine.filter(function (l) { return statusOf(l) !== "todo"; }).length;
+      $("pbL").textContent = "Já vistas";
+      $("pbT").textContent = seen + " de " + mine.length + " vagas";
+      $("pbB").style.width = (mine.length ? Math.round(seen / mine.length * 100) : 0) + "%";
+      $("prW").hidden = true;
+      return;
+    }
+    $("prW").hidden = false;
+    $("pbL").textContent = "Blue team";
+    [["blue", "pbT", "pbB"], ["red", "prT", "prB"]].forEach(function (p) {
+      var all = mine.filter(function (l) { return inTeam(l, p[0]); });
+      var done = all.filter(function (l) { return statusOf(l) === "done"; }).length;
+      $(p[1]).textContent = done + " de " + all.length + " concluídos";
+      $(p[2]).style.width = (all.length ? Math.round(done / all.length * 100) : 0) + "%";
+    });
+  }
+  function renderCats() {
+    var ul = $("cats"); ul.innerHTML = "";
+    var scoped = links.filter(function (l) { return inSec(l) && inTeam(l, teamFilter); });
+    var map = {};
+    scoped.forEach(function (l) { var c = l.cat || "Sem matéria"; map[c] = (map[c] || 0) + 1; });
+    var names = Object.keys(map).sort(function (a, b) { return a.localeCompare(b, "pt-BR"); });
+    var all = [{ name: "", label: "Todas", n: scoped.length }].concat(names.map(function (c) { return { name: c, label: c, n: map[c] }; }));
+    if (filterCat && !map[filterCat]) filterCat = "";
+    all.forEach(function (c) {
+      var li = document.createElement("li"), b = document.createElement("button");
+      b.type = "button"; b.setAttribute("aria-current", String(c.name === filterCat));
+      var s1 = document.createElement("span"); s1.textContent = c.label;
+      var s2 = document.createElement("span"); s2.className = "n"; s2.textContent = c.n;
+      b.appendChild(s1); b.appendChild(s2);
+      b.addEventListener("click", function () { filterCat = c.name; render(); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+  }
+  function visible() {
+    var q = $("q").value.trim().toLowerCase(), st = $("statusFilter").value, ty = $("typeFilter").value;
+    return links.filter(function (l) {
+      if (!inSec(l) || !inTeam(l, teamFilter)) return false;
+      var c = l.cat || "Sem matéria";
+      if (filterCat && c !== filterCat) return false;
+      if (st && statusOf(l) !== st) return false;
+      if (ty && l.type !== ty) return false;
+      if (q && (l.title + " " + l.url + " " + l.note + " " + c + " " + l.type).toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+  }
+  function chip(text, cls) { var s = document.createElement("span"); s.className = "chip" + (cls ? " " + cls : ""); s.textContent = text; return s; }
+
+  function renderList() {
+    var ul = $("list"); ul.innerHTML = "";
+    var items = visible(), total = links.filter(inSec).length;
+    $("count").textContent = total === 0 ? "" : items.length + (items.length === 1 ? " link" : " links") + (items.length !== total ? " de " + total : "");
+
+    if (!items.length) {
+      var li = document.createElement("li"); li.className = "empty";
+      var h = document.createElement("h2"), p = document.createElement("p");
+      if (total === 0) {
+        h.textContent = section === "vaga" ? "Nenhuma vaga salva ainda" : "Nenhum link salvo ainda";
+        p.textContent = section === "vaga" ? "Adicione sites de vagas e anúncios que você quer acompanhar." : "Adicione o primeiro link ou comece com uma lista de sugestões para Blue e Red team.";
+      }
+      else { h.textContent = "Nada encontrado"; p.textContent = "Mude a busca ou os filtros para ver seus links."; }
+      li.appendChild(h); li.appendChild(p);
+      if (total === 0) {
+        var b1 = document.createElement("button"); b1.className = "btn primary"; b1.type = "button"; b1.textContent = section === "vaga" ? "Adicionar vaga" : "Adicionar link";
+        b1.addEventListener("click", function () { openDialog(); });
+        var b2 = document.createElement("button"); b2.className = "btn"; b2.type = "button"; b2.textContent = "Adicionar sugestões";
+        b2.addEventListener("click", addStarter);
+        li.appendChild(b1); li.appendChild(b2);
+      }
+      ul.appendChild(li); return;
+    }
+
+    items.sort(function (a, b) { return b.added - a.added; }).forEach(function (l) {
+      var s = statusOf(l);
+      var li = document.createElement("li"); li.className = "item"; li.dataset.s = s; li.dataset.team = l.team;
+
+      var st = document.createElement("button");
+      st.type = "button"; st.className = "state"; st.dataset.s = s;
+      st.setAttribute("aria-label", "Status: " + LABELS[section][s] + ". Clique para mudar."); st.title = LABELS[section][s];
+      st.addEventListener("click", function () {
+        statusMap[l.id] = STATUS[(STATUS.indexOf(s) + 1) % STATUS.length];
+        writeLS(STATUS_KEY, statusMap); render();
+      });
+
+      var ico = document.createElement("div"); ico.className = "ico";
+      var img = document.createElement("img"); img.alt = ""; img.loading = "lazy";
+      img.src = "https://www.google.com/s2/favicons?sz=64&domain=" + encodeURIComponent(host(l.url));
+      img.addEventListener("error", function () { ico.innerHTML = ""; ico.textContent = (l.title[0] || "?").toUpperCase(); });
+      ico.appendChild(img);
+
+      var main = document.createElement("div"); main.className = "main";
+      var a = document.createElement("a"); a.className = "title"; a.href = l.url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = l.title;
+      var meta = document.createElement("div"); meta.className = "meta";
+      meta.appendChild(chip(TEAMS[l.team], "t-" + l.team));
+      if (l.type) meta.appendChild(chip(l.type));
+      meta.appendChild(chip(l.cat || "Sem matéria"));
+      var hs = document.createElement("span"); hs.textContent = host(l.url); meta.appendChild(hs);
+      main.appendChild(a); main.appendChild(meta);
+      if (l.note) { var n = document.createElement("p"); n.className = "note"; n.textContent = l.note; main.appendChild(n); }
+
+      var acts = document.createElement("div"); acts.className = "acts";
+      var ed = document.createElement("button"); ed.type = "button"; ed.textContent = "Editar";
+      ed.addEventListener("click", function () { openDialog(l); });
+      var del = document.createElement("button"); del.type = "button"; del.className = "del"; del.textContent = "Excluir";
+      del.addEventListener("click", function () {
+        if (confirm("Excluir “" + l.title + "”?")) {
+          commit(links.filter(function (x) { return x.id !== l.id; }), "Remove link: " + l.title).then(function (ok) { if (ok) render(); });
+        }
+      });
+      acts.appendChild(ed); acts.appendChild(del);
+      li.appendChild(st); li.appendChild(ico); li.appendChild(main); li.appendChild(acts);
+      ul.appendChild(li);
+    });
+  }
+  function render() { renderTeams(); renderProgress(); renderCats(); renderList(); }
+
+  function addStarter() {
+    var now = Date.now();
+    var add = (section === "vaga" ? JOB_STARTER : STARTER).map(function (s, i) {
+      return { id: uid(), section: section, url: s.url, title: s.title, team: s.team, type: s.type, cat: s.cat, note: s.note, added: now - i };
+    });
+    commit(links.concat(add), "Add starter links").then(function (ok) { if (ok) render(); });
+  }
+
+  /* ---------- Adicionar / editar ---------- */
+  var dlg = $("dlg");
+  function fillCatList() {
+    var t = $("fTeam").value, seen = {}, dl = $("catList"); dl.innerHTML = "";
+    var pool = section === "vaga" ? JOB_CATS.slice() : (t === "both" ? CATS.both.concat(CATS.blue, CATS.red) : CATS[t].concat(CATS.both));
+    links.forEach(function (l) { if (l.cat && l.section === section) pool.push(l.cat); });
+    pool.forEach(function (c) { if (seen[c]) return; seen[c] = 1; var o = document.createElement("option"); o.value = c; dl.appendChild(o); });
+  }
+  function openDialog(l) {
+    if (!connected()) { openCfg(); return; }
+    editingId = l ? l.id : null;
+    var job = section === "vaga";
+    $("dlgTitle").textContent = (l ? "Editar " : "Adicionar ") + (job ? "vaga" : "link");
+    $("lCat").textContent = job ? "Cargo ou área" : "Matéria";
+    $("fCat").placeholder = job ? "Ex.: Analista SOC, Pentester, Júnior" : "Ex.: Pentest web, SIEM, Forense";
+    $("fTitle").placeholder = job ? "Ex.: Analista SOC N1 na Empresa X" : "Ex.: Active Directory na prática";
+    $("fNote").placeholder = job ? "Salário, local, prazo de inscrição..." : "O que você quer aprender com esse link?";
+    $("fUrl").value = l ? l.url : "";
+    $("fTitle").value = l ? l.title : "";
+    $("fTeam").value = l ? l.team : (teamFilter === "all" ? "both" : teamFilter);
+    fillTypes($("fType"), false);
+    $("fType").value = l && l.type ? l.type : typesFor(section)[0];
+    if (l && l.type && typesFor(section).indexOf(l.type) === -1) { var o = document.createElement("option"); o.textContent = l.type; $("fType").appendChild(o); $("fType").value = l.type; }
+    $("fCat").value = l ? l.cat : (filterCat || "");
+    $("fNote").value = l ? l.note : "";
+    $("err").textContent = "";
+    fillCatList();
+    dlg.showModal(); $("fUrl").focus();
+  }
+  $("fTeam").addEventListener("change", fillCatList);
+  $("add").addEventListener("click", function () { openDialog(); });
+  $("cancel").addEventListener("click", function () { dlg.close(); });
+  $("form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var url = normalizeUrl($("fUrl").value);
+    if (!url) { $("err").textContent = "Digite um endereço válido, como https://exemplo.com"; $("fUrl").focus(); return; }
+    var rec = { url: url, title: $("fTitle").value.trim() || host(url), team: $("fTeam").value, type: $("fType").value, cat: $("fCat").value.trim(), note: $("fNote").value.trim() };
+    var next;
+    if (editingId) {
+      next = links.map(function (x) { return x.id === editingId ? Object.assign({}, rec, { id: x.id, added: x.added, section: x.section }) : x; });
+    } else {
+      next = links.concat([Object.assign({}, rec, { id: uid(), added: Date.now(), section: section })]);
+    }
+    $("save").disabled = true;
+    commit(next, (editingId ? "Update link: " : "Add link: ") + rec.title).then(function (ok) {
+      $("save").disabled = false; if (ok) { dlg.close(); render(); }
+    });
+  });
+
+  /* ---------- Filtros ---------- */
+  document.querySelectorAll(".teams button").forEach(function (b) {
+    b.addEventListener("click", function () { teamFilter = b.dataset.t; filterCat = ""; writeLS(TEAM_KEY, teamFilter); render(); });
+  });
+  $("q").addEventListener("input", renderList);
+  $("statusFilter").addEventListener("change", renderList);
+  $("typeFilter").addEventListener("change", renderList);
+  function renderSection() {
+    var job = section === "vaga", L = LABELS[section];
+    document.querySelectorAll(".sections button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.sec === section)); });
+    $("sub").textContent = job ? "Sites e anúncios de vagas em segurança, para Blue e Red team." : "Seus links de Blue team e Red team, num só lugar.";
+    $("catTitle").textContent = job ? "Cargos e áreas" : "Matérias";
+    $("add").textContent = job ? "Adicionar vaga" : "Adicionar link";
+    $("q").placeholder = job ? "Buscar por vaga, site ou anotação" : "Buscar por título, site ou anotação";
+    fillTypes($("typeFilter"), true);
+    $("statusFilter").innerHTML = '<option value="">Todos os status</option><option value="todo">' + L.todo + '</option><option value="doing">' + L.doing + '</option><option value="done">' + L.done + '</option>';
+  }
+  document.querySelectorAll(".sections button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      section = b.dataset.sec; filterCat = ""; $("q").value = "";
+      writeLS(SECTION_KEY, section); renderSection(); render();
+    });
+  });
+
+  /* ---------- Exportar / importar ---------- */
+  $("export").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify(links, null, 2)], { type: "application/json" });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "links-de-estudo.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000); toast("Arquivo exportado");
+  });
+  $("import").addEventListener("click", function () { $("file").click(); });
+  $("file").addEventListener("change", function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var data = JSON.parse(r.result);
+        if (!Array.isArray(data)) throw new Error("formato");
+        var known = {}; links.forEach(function (l) { known[l.url] = true; });
+        var add = cleanList(data).filter(function (d) { var u = normalizeUrl(d.url); if (!u || known[u]) return false; known[u] = true; d.url = u; d.id = uid(); return true; });
+        if (!add.length) { toast("Nenhum link novo no arquivo"); return; }
+        commit(links.concat(add), "Import " + add.length + " links").then(function (ok) { if (ok) render(); });
+      } catch (err) { toast("Arquivo inválido. Use um .json exportado daqui."); }
+      $("file").value = "";
+    };
+    r.readAsText(f);
+  });
+
+  /* ---------- Tema ---------- */
+  function applyTheme(t) { document.documentElement.setAttribute("data-theme", t); }
+  applyTheme(readLS(THEME_KEY, "dark"));
+  $("theme").addEventListener("click", function () {
+    var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    applyTheme(next); writeLS(THEME_KEY, next);
+  });
+
+  /* ---------- Conexão com o GitHub ---------- */
+  var cdlg = $("cfg");
+  function paintConn() {
+    $("conn").textContent = connected() ? "Conectado a " + cfg.owner + "/" + cfg.repo : "Somente leitura. Conecte o GitHub para adicionar links.";
+  }
+  function openCfg() {
+    var g = guessRepo();
+    $("cOwner").value = cfg.owner || g.owner; $("cRepo").value = cfg.repo || g.repo; $("cToken").value = cfg.token || "";
+    $("cErr").textContent = ""; cdlg.showModal();
+  }
+  $("connect").addEventListener("click", openCfg);
+  $("cCancel").addEventListener("click", function () { cdlg.close(); });
+  $("cOff").addEventListener("click", function () {
+    cfg.token = ""; writeLS(CFG_KEY, cfg); sha = null; paintConn(); cdlg.close(); start(); toast("GitHub desconectado");
+  });
+  $("cfgForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var o = $("cOwner").value.trim(), r = $("cRepo").value.trim(), t = $("cToken").value.trim();
+    if (!o || !r || !t) { $("cErr").textContent = "Preencha usuário, repositório e token."; return; }
+    cfg = { owner: o, repo: r, token: t };
+    api("GET").then(function (res) {
+      if (res.status === 401 || res.status === 403) throw new Error("Token inválido ou sem permissão de Contents.");
+      if (res.status === 404) {
+        return fetch("https://api.github.com/repos/" + encodeURIComponent(o) + "/" + encodeURIComponent(r), { headers: { "Authorization": "Bearer " + t } })
+          .then(function (rr) { if (!rr.ok) throw new Error("Repositório não encontrado com esse token. Confira usuário, nome e acesso."); });
+      }
+    }).then(function () {
+      writeLS(CFG_KEY, cfg); paintConn(); cdlg.close(); start(); toast("GitHub conectado");
+    }).catch(function (err) { cfg.token = ""; $("cErr").textContent = err.message; });
+  });
+
+  function start() {
+    load().then(render).catch(function (e) {
+      links = []; render();
+      toast(e.message === "token" ? "Token recusado. Reconecte o GitHub." : "Não foi possível carregar links.json. Ele existe no repositório?");
+    });
+  }
+
+  statusMap = readLS(STATUS_KEY, {});
+  cfg = readLS(CFG_KEY, cfg);
+  var savedTeam = readLS(TEAM_KEY, "all");
+  teamFilter = (savedTeam === "blue" || savedTeam === "red") ? savedTeam : "all";
+  section = readLS(SECTION_KEY, "estudo") === "vaga" ? "vaga" : "estudo";
+  paintConn();
+  renderSection();
+  render();
+  start();
+})();
+</script>
+</body>
+</html>
