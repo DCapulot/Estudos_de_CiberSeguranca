@@ -18,6 +18,10 @@
     --blue: #5b9dff;
     --red: #ff5a5f;
     --purple: #a98bff;
+    --yellow: #f5c518;
+    --metal1: #e4e9f5;
+    --metal2: #7c88a6;
+    --metal-edge: #2a3350;
     --accent: var(--purple);
     --accent-ink: #0a0e1a;
     --mark: rgba(242, 208, 34, .32);
@@ -34,19 +38,24 @@
     --blue: #1f56d6;
     --red: #c8262d;
     --purple: #6a3fd1;
+    --yellow: #d9a400;
+    --metal1: #f6f8fc;
+    --metal2: #97a2bd;
+    --metal-edge: #4a5578;
     --accent-ink: #ffffff;
     --mark: #ffe45c;
     --mark-solid: #ffe45c;
     --danger: #b3261e;
     color-scheme: light;
   }
-  :root[data-team="blue"] { --accent: var(--blue); }
-  :root[data-team="red"] { --accent: var(--red); }
-  :root[data-team="blue"][data-theme="dark"], :root[data-team="red"][data-theme="dark"] { --accent-ink: #0a0e1a; }
+  :root[data-module="blue"] { --accent: var(--blue); }
+  :root[data-module="red"] { --accent: var(--red); }
+  :root[data-module="vaga"] { --accent: var(--yellow); --accent-ink: #1a1300; }
 
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
+    background: var(--bg) radial-gradient(900px 420px at 88% -8%, color-mix(in srgb, var(--accent) 20%, transparent), transparent) no-repeat;
     font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     font-size: 16px; line-height: 1.5; min-height: 100vh;
   }
@@ -79,6 +88,7 @@
   .sections button { border: 0; background: transparent; padding: .55rem 1.1rem; border-radius: 7px; font-family: "Chakra Petch", sans-serif; font-weight: 600; color: var(--muted); }
   .sections button:hover { color: var(--ink); }
   .sections button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  .sections button[data-sec="vaga"][aria-pressed="true"] { background: var(--yellow); color: #1a1300; }
 
   .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 2.5rem; margin-top: 2rem; }
   aside { position: sticky; top: 1.5rem; align-self: start; }
@@ -169,6 +179,54 @@
   .toast { position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: .6rem 1rem; border-radius: 8px; font-size: .92rem; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: calc(100vw - 2rem); }
   .toast.on { opacity: 1; }
 
+  /* Detalhes: checklist e anotações */
+  .detail { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: .3rem; padding-top: 1rem; border-top: 1px dashed var(--line); }
+  .detail h3 { font-family: "Chakra Petch", sans-serif; font-size: .95rem; font-weight: 600; margin: 0 0 .6rem; }
+  .ck { list-style: none; padding: 0; margin: 0 0 .6rem; display: grid; gap: .25rem; }
+  .ck li { display: flex; gap: .6rem; align-items: center; overflow-wrap: anywhere; }
+  .ck input[type="checkbox"] { width: 18px; height: 18px; padding: 0; flex: none; accent-color: var(--accent); }
+  .ck li.d span { color: var(--muted); text-decoration: line-through; }
+  .ck .x { margin-left: auto; border: 0; background: transparent; color: var(--muted); padding: .1rem .5rem; border-radius: 6px; font-size: 1.1rem; line-height: 1; }
+  .ck .x:hover { color: var(--danger); background: var(--bg); }
+  .ck-add { display: flex; gap: .5rem; }
+  .detail textarea { resize: vertical; min-height: 6.5rem; }
+  .detail .hint { color: var(--muted); font-size: .82rem; margin: .4rem 0 0; }
+
+  /* Banner do módulo + dragão */
+  .banner { position: relative; display: grid; grid-template-columns: minmax(170px, 260px) 1fr; gap: 1.5rem; align-items: center; margin-top: 1.5rem; padding: 1rem 1.5rem; background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--accent); border-radius: 14px; overflow: hidden; }
+  .banner::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .55; }
+  :root[data-module="all"] .banner::before { background: radial-gradient(circle, color-mix(in srgb, var(--accent) 38%, transparent) 1px, transparent 1.6px) 0 0 / 14px 14px; }
+  :root[data-module="blue"] .banner::before { background: repeating-linear-gradient(0deg, color-mix(in srgb, var(--accent) 22%, transparent) 0 1px, transparent 1px 7px); }
+  :root[data-module="red"] .banner::before { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, transparent) 0 6px, transparent 6px 15px); }
+  :root[data-module="vaga"] .banner::before { background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--accent) 24%, transparent) 0 2px, transparent 2px 12px); }
+  .banner > * { position: relative; }
+  .dragon-img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--accent); box-shadow: 0 0 22px -4px var(--accent); background: #05070f; }
+  .mod { font-family: "Chakra Petch", sans-serif; font-size: .85rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+  .mtag { margin: .2rem 0 1rem; font-size: 1.2rem; font-family: "Chakra Petch", sans-serif; font-weight: 500; }
+  .rank { font-family: "Chakra Petch", sans-serif; font-size: 1.35rem; font-weight: 700; }
+  .rank-sub { color: var(--muted); font-size: .9rem; margin: .1rem 0 .5rem; }
+  .rank-bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .rank-bar div { height: 100%; width: 0; background: var(--accent); border-radius: 4px; transition: width .4s; }
+
+  /* Intro */
+  .intro { --metal1: #e4e9f5; --metal2: #7c88a6; --metal-edge: #2a3350; position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; text-align: center; padding: 1.5rem; color: #e6eaf5;
+    background: #05070f radial-gradient(700px 420px at 50% 38%, color-mix(in srgb, var(--accent) 24%, #05070f), #05070f 72%); transition: opacity .5s; }
+  .intro[hidden] { display: none; }
+  .intro.out { opacity: 0; pointer-events: none; }
+  .intro > div { width: min(560px, 100%); }
+  .intro h2 { font-size: clamp(1.8rem, 6vw, 3rem); letter-spacing: .2em; text-transform: uppercase; margin-top: .75rem; font-weight: 700; }
+  .boot { color: #9aa6c9; font-size: .95rem; min-height: 4.6rem; margin: 1rem 0; }
+  .boot div { opacity: 0; animation: fade .4s forwards; }
+  @keyframes fade { to { opacity: 1; } }
+  .intro .dragon-img { width: min(300px, 70vw); margin: 0 auto; opacity: 0; animation: pop .7s cubic-bezier(.2, .8, .2, 1) .3s forwards; }
+  @keyframes pop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) {
+    .intro .dragon-img { animation: none; opacity: 1; }
+    .boot div { animation: none; opacity: 1; }
+    .rank-bar div { animation: none; transition: none; }
+    .intro { transition: none; }
+  }
+
   @media (max-width: 780px) {
     .wrap { padding: 1.25rem 1rem 3rem; }
     .layout { grid-template-columns: 1fr; gap: 1.5rem; }
@@ -180,6 +238,9 @@
     .ico { display: none; }
     .acts { grid-column: 2; }
     .two { grid-template-columns: 1fr; }
+    .detail { grid-template-columns: 1fr; }
+    .banner { grid-template-columns: 1fr; padding: 1rem; }
+    .banner .dragon-img { max-width: 260px; }
   }
   @media (prefers-reduced-motion: reduce) { .toast, .bar-fg { transition: none; } }
 </style>
@@ -204,6 +265,17 @@
     </div>
   </header>
 
+  <section class="banner" aria-label="Módulo atual e nível do dragão">
+    <div id="dragon"></div>
+    <div>
+      <div class="mod" id="modName"></div>
+      <p class="mtag" id="modTag"></p>
+      <div class="rank" id="rankName"></div>
+      <div class="rank-sub" id="rankSub"></div>
+      <div class="rank-bar"><div id="rankBar"></div></div>
+    </div>
+  </section>
+
   <div class="layout">
     <aside>
       <div class="prog" aria-label="Progresso">
@@ -217,6 +289,7 @@
         <button class="btn" id="import" type="button">Importar</button>
         <button class="btn" id="theme" type="button" aria-label="Alternar tema claro e escuro">Tema</button>
         <button class="btn" id="connect" type="button">GitHub</button>
+        <button class="btn" id="replay" type="button">Intro</button>
         <input type="file" id="file" accept="application/json" hidden>
       </div>
       <p class="conn" id="conn"></p>
@@ -305,6 +378,15 @@
   </form>
 </dialog>
 
+<div class="intro" id="intro" role="dialog" aria-label="Introdução" hidden>
+  <div>
+    <div id="introDragon"></div>
+    <h2 class="display">Cyber Study</h2>
+    <div class="boot" id="boot"></div>
+    <button class="btn primary" id="enter" type="button">Entrar</button>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -314,6 +396,8 @@
   var THEME_KEY = "links-de-estudo-tema";
   var TEAM_KEY = "links-de-estudo-time";
   var SECTION_KEY = "links-de-estudo-secao";
+  var RANK_KEY = "links-de-estudo-rank";
+  var INTRO_KEY = "links-de-estudo-intro";
   var FILE = "links.json";
   var STATUS = ["todo", "doing", "done"];
   var LABELS = {
@@ -366,7 +450,19 @@
     { title: "Wireshark", url: "https://www.wireshark.org", team: "both", type: "Ferramenta", cat: "Redes", note: "" }
   ];
 
-  var links = [], statusMap = {}, sha = null, section = "estudo";
+  var RANKS = [
+    { name: "Cyber Dragon", min: 0, heads: 1 },
+    { name: "Cyber Twin Dragon", min: 5, heads: 2 },
+    { name: "Cyber End Dragon", min: 15, heads: 3 },
+    { name: "Cyber Dragon Infinity", min: 30, heads: 3, ring: true }
+  ];
+  var MODULES = {
+    all: ["Módulo Fusão · Blue + Red", "Entenda o ataque para construir a defesa."],
+    blue: ["Módulo Defesa · Blue team", "Detectar, conter e erradicar."],
+    red: ["Módulo Ataque · Red team", "Pense como o atacante."],
+    vaga: ["Módulo Carreira · Vagas", "Transforme estudo em oportunidade."]
+  };
+  var links = [], statusMap = {}, sha = null, section = "estudo", loaded = false;
   var cfg = { owner: "", repo: "", token: "" };
   var teamFilter = "all", filterCat = "", editingId = null;
   var $ = function (id) { return document.getElementById(id); };
@@ -417,7 +513,11 @@
       return {
         id: String(d.id || uid()), url: String(d.url), title: String(d.title || host(d.url)),
         section: d.section === "vaga" ? "vaga" : "estudo", team: TEAMS[d.team] ? d.team : "both", type: String(d.type || ""),
-        cat: String(d.cat || ""), note: String(d.note || ""), added: Number(d.added) || Date.now()
+        cat: String(d.cat || ""), note: String(d.note || ""), added: Number(d.added) || Date.now(),
+        notes: String(d.notes || ""),
+        checklist: Array.isArray(d.checklist) ? d.checklist.filter(function (c) { return c && c.t; }).map(function (c) {
+          return { id: String(c.id || uid()), t: String(c.t), d: !!c.d };
+        }) : []
       };
     });
   }
@@ -450,8 +550,59 @@
     }).catch(function (e) { toast(e.message || "Erro de conexão ao salvar."); return false; });
   }
 
+  /* Salva alterações pequenas (checklist, anotações) depois de uma pausa */
+  var flushT = null, flushing = Promise.resolve(), pending = false;
+  function guard() { if (!connected()) { openCfg(); return false; } return true; }
+  function scheduleSave(msg) {
+    pending = true; clearTimeout(flushT);
+    flushT = setTimeout(function () {
+      flushing = flushing.then(function () { return commit(links.slice(), msg); })
+        .then(function (ok) { pending = false; if (!ok) start(); });
+    }, 700);
+  }
+  window.addEventListener("beforeunload", function (e) { if (pending) { e.preventDefault(); e.returnValue = ""; } });
+
   /* ---------- Renderização ---------- */
+  function rankFor(count) {
+    var i = 0;
+    RANKS.forEach(function (r, k) { if (count >= r.min) i = k; });
+    var r = RANKS[i];
+    return { i: i, name: r.name, heads: r.heads, ring: !!r.ring, min: r.min, next: RANKS[i + 1] || null, count: count };
+  }
+
+  /* Um dragão por módulo (arte das fotos enviadas, recortada e embutida em base64) */
+  var DRAGONS = {
+    all: { name: "Cyber End Dragon", w: 520, h: 348, src: "images/end-dragon.webp" },
+    blue: { name: "Cyber Dragon Sieger", w: 358, h: 358, src: "images/sieger.webp" },
+    red: { name: "Cyber Dragon Infinity", w: 447, h: 447, src: "images/infinity.webp" },
+    vaga: { name: "Primeiro Dragão Cibernético", w: 310, h: 308, src: "images/proto.webp" }
+  };
+  function currentModule() { return section === "vaga" ? "vaga" : teamFilter; }
+  function dragonImg(mod) {
+    var d = DRAGONS[mod] || DRAGONS.all;
+    return '<img class="dragon-img" src="' + d.src + '" alt="Dragão do módulo: ' + d.name + '" width="' + d.w + '" height="' + d.h + '">';
+  }
+
+  function renderBanner() {
+    var mod = section === "vaga" ? "vaga" : teamFilter;
+    $("modName").textContent = MODULES[mod][0];
+    $("modTag").textContent = MODULES[mod][1];
+    var done = links.filter(function (l) { return l.section === "estudo" && statusOf(l) === "done"; }).length;
+    if (loaded) writeLS(RANK_KEY, done);
+    var rk = rankFor(done);
+    $("dragon").innerHTML = dragonImg(mod);
+    $("rankName").textContent = "Nível " + (rk.i + 1) + " · " + rk.name;
+    if (rk.next) {
+      $("rankSub").textContent = done + " de " + rk.next.min + " estudos concluídos para virar " + rk.next.name;
+      $("rankBar").style.width = Math.round((done - rk.min) / (rk.next.min - rk.min) * 100) + "%";
+    } else {
+      $("rankSub").textContent = done + " estudos concluídos. Nível máximo alcançado!";
+      $("rankBar").style.width = "100%";
+    }
+  }
+
   function renderTeams() {
+    document.documentElement.setAttribute("data-module", section === "vaga" ? "vaga" : teamFilter);
     document.documentElement.setAttribute("data-team", teamFilter);
     document.querySelectorAll(".teams button").forEach(function (b) {
       b.setAttribute("aria-pressed", String(b.dataset.t === teamFilter));
@@ -506,6 +657,61 @@
       return true;
     });
   }
+  var openIds = {}, focusAdd = null;
+  function buildDetail(l) {
+    var box = document.createElement("div"); box.className = "detail";
+
+    var left = document.createElement("div");
+    var done = l.checklist.filter(function (c) { return c.d; }).length;
+    var h = document.createElement("h3");
+    h.textContent = "Checklist" + (l.checklist.length ? " · " + done + "/" + l.checklist.length : "");
+    left.appendChild(h);
+    var ul = document.createElement("ul"); ul.className = "ck";
+    l.checklist.forEach(function (c) {
+      var li = document.createElement("li"); if (c.d) li.className = "d";
+      var cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = c.d; cb.setAttribute("aria-label", c.t);
+      cb.addEventListener("change", function () {
+        if (!guard()) { cb.checked = !cb.checked; return; }
+        c.d = cb.checked; scheduleSave("Update checklist: " + l.title); render();
+      });
+      var sp = document.createElement("span"); sp.textContent = c.t;
+      var x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", "Remover item " + c.t);
+      x.addEventListener("click", function () {
+        if (!guard()) return;
+        l.checklist = l.checklist.filter(function (k) { return k.id !== c.id; });
+        scheduleSave("Update checklist: " + l.title); render();
+      });
+      li.appendChild(cb); li.appendChild(sp); li.appendChild(x); ul.appendChild(li);
+    });
+    left.appendChild(ul);
+    var add = document.createElement("div"); add.className = "ck-add";
+    var inp = document.createElement("input"); inp.type = "text"; inp.placeholder = "Novo item (ex.: Módulo 1)"; inp.setAttribute("data-add", l.id); inp.setAttribute("aria-label", "Novo item do checklist");
+    var btn = document.createElement("button"); btn.type = "button"; btn.className = "btn"; btn.textContent = "Adicionar";
+    function addItem() {
+      var t = inp.value.trim(); if (!t) return;
+      if (!guard()) return;
+      l.checklist.push({ id: uid(), t: t, d: false });
+      focusAdd = l.id; scheduleSave("Update checklist: " + l.title); render();
+    }
+    btn.addEventListener("click", addItem);
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); addItem(); } });
+    add.appendChild(inp); add.appendChild(btn); left.appendChild(add);
+
+    var right = document.createElement("div");
+    var h2 = document.createElement("h3"); h2.textContent = "Anotações"; right.appendChild(h2);
+    var ta = document.createElement("textarea"); ta.value = l.notes; ta.placeholder = "Resumos, comandos, dúvidas, o que você aprendeu...";
+    ta.setAttribute("aria-label", "Anotações de " + l.title);
+    ta.addEventListener("focus", function () { if (!connected()) { ta.blur(); openCfg(); } });
+    ta.addEventListener("input", function () { l.notes = ta.value; });
+    ta.addEventListener("change", function () { scheduleSave("Update notes: " + l.title); });
+    right.appendChild(ta);
+    var hint = document.createElement("p"); hint.className = "hint"; hint.textContent = "Salva sozinho no seu repositório quando você sai do campo.";
+    right.appendChild(hint);
+
+    box.appendChild(left); box.appendChild(right);
+    return box;
+  }
+
   function chip(text, cls) { var s = document.createElement("span"); s.className = "chip" + (cls ? " " + cls : ""); s.textContent = text; return s; }
 
   function renderList() {
@@ -556,11 +762,16 @@
       meta.appendChild(chip(TEAMS[l.team], "t-" + l.team));
       if (l.type) meta.appendChild(chip(l.type));
       meta.appendChild(chip(l.cat || "Sem matéria"));
+      if (l.checklist.length) meta.appendChild(chip("Checklist " + l.checklist.filter(function (c) { return c.d; }).length + "/" + l.checklist.length));
+      if (l.notes) meta.appendChild(chip("Notas"));
       var hs = document.createElement("span"); hs.textContent = host(l.url); meta.appendChild(hs);
       main.appendChild(a); main.appendChild(meta);
       if (l.note) { var n = document.createElement("p"); n.className = "note"; n.textContent = l.note; main.appendChild(n); }
 
       var acts = document.createElement("div"); acts.className = "acts";
+      var dt = document.createElement("button"); dt.type = "button"; dt.textContent = openIds[l.id] ? "Fechar" : "Detalhes";
+      dt.setAttribute("aria-expanded", String(!!openIds[l.id]));
+      dt.addEventListener("click", function () { openIds[l.id] = !openIds[l.id]; renderList(); });
       var ed = document.createElement("button"); ed.type = "button"; ed.textContent = "Editar";
       ed.addEventListener("click", function () { openDialog(l); });
       var del = document.createElement("button"); del.type = "button"; del.className = "del"; del.textContent = "Excluir";
@@ -569,12 +780,18 @@
           commit(links.filter(function (x) { return x.id !== l.id; }), "Remove link: " + l.title).then(function (ok) { if (ok) render(); });
         }
       });
-      acts.appendChild(ed); acts.appendChild(del);
+      acts.appendChild(dt); acts.appendChild(ed); acts.appendChild(del);
       li.appendChild(st); li.appendChild(ico); li.appendChild(main); li.appendChild(acts);
+      if (openIds[l.id]) li.appendChild(buildDetail(l));
       ul.appendChild(li);
     });
+    if (focusAdd) {
+      var f = ul.querySelector('[data-add="' + focusAdd + '"]');
+      if (f) f.focus();
+      focusAdd = null;
+    }
   }
-  function render() { renderTeams(); renderProgress(); renderCats(); renderList(); }
+  function render() { renderTeams(); renderBanner(); renderProgress(); renderCats(); renderList(); }
 
   function addStarter() {
     var now = Date.now();
@@ -623,7 +840,7 @@
     var rec = { url: url, title: $("fTitle").value.trim() || host(url), team: $("fTeam").value, type: $("fType").value, cat: $("fCat").value.trim(), note: $("fNote").value.trim() };
     var next;
     if (editingId) {
-      next = links.map(function (x) { return x.id === editingId ? Object.assign({}, rec, { id: x.id, added: x.added, section: x.section }) : x; });
+      next = links.map(function (x) { return x.id === editingId ? Object.assign({}, x, rec, { id: x.id, added: x.added, section: x.section }) : x; });
     } else {
       next = links.concat([Object.assign({}, rec, { id: uid(), added: Date.now(), section: section })]);
     }
@@ -722,11 +939,33 @@
   });
 
   function start() {
-    load().then(render).catch(function (e) {
+    return load().then(function () { loaded = true; render(); }).catch(function (e) {
       links = []; render();
       toast(e.message === "token" ? "Token recusado. Reconecte o GitHub." : "Não foi possível carregar links.json. Ele existe no repositório?");
     });
   }
+
+  /* ---------- Intro ---------- */
+  var intro = $("intro"), introT = null;
+  function showIntro() {
+    var dmod = currentModule();
+    $("introDragon").innerHTML = dragonImg(dmod);
+    var boot = $("boot"); boot.innerHTML = "";
+    ["> carregando módulos: defesa, ataque e carreira", "> preparando seu painel de estudos", "> dragão do módulo: " + DRAGONS[dmod].name + " ... online"].forEach(function (t, i) {
+      var d = document.createElement("div"); d.textContent = t; d.style.animationDelay = (1.4 + i * 0.9) + "s"; boot.appendChild(d);
+    });
+    intro.hidden = false; intro.classList.remove("out");
+    clearTimeout(introT); introT = setTimeout(hideIntro, 6000);
+    $("enter").focus();
+  }
+  function hideIntro() {
+    clearTimeout(introT); intro.classList.add("out");
+    setTimeout(function () { intro.hidden = true; }, 500);
+    try { sessionStorage.setItem(INTRO_KEY, "1"); } catch (e) {}
+  }
+  intro.addEventListener("click", hideIntro);
+  document.addEventListener("keydown", function (e) { if (!intro.hidden && (e.key === "Escape" || e.key === "Enter")) hideIntro(); });
+  $("replay").addEventListener("click", showIntro);
 
   statusMap = readLS(STATUS_KEY, {});
   cfg = readLS(CFG_KEY, cfg);
@@ -736,6 +975,9 @@
   paintConn();
   renderSection();
   render();
+  var seen = false;
+  try { seen = sessionStorage.getItem(INTRO_KEY) === "1"; } catch (e) {}
+  if (!seen) showIntro();
   start();
 })();
 </script>
