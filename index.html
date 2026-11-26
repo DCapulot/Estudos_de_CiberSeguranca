@@ -243,6 +243,25 @@
     .banner .dragon-img { max-width: 260px; }
   }
   @media (prefers-reduced-motion: reduce) { .toast, .bar-fg { transition: none; } }
+  [hidden] { display: none !important; }
+  .acc-list { list-style: none; padding: 0; margin: 0 0 1rem; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .acc-list li { display: flex; align-items: center; gap: .6rem; padding: .55rem .75rem; }
+  .acc-list li + li { border-top: 1px solid var(--line); }
+  .acc-list li > span { flex: 1; overflow-wrap: anywhere; }
+  .acc-list li.muted { color: var(--muted); }
+  .acc-list select { width: auto; padding: .35rem .5rem; }
+  .acc-list .btn { padding: .35rem .7rem; }
+  .gate { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; text-align: center; padding: 1.5rem; background: var(--bg) radial-gradient(800px 420px at 50% 0%, color-mix(in srgb, var(--purple) 24%, transparent), transparent) no-repeat; }
+  .gate > div { width: min(460px, 100%); }
+  .gate .dragon-img { width: min(240px, 60vw); margin: 0 auto 1rem; }
+  .gate h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); letter-spacing: .14em; text-transform: uppercase; }
+  .gate p { color: var(--muted); margin: .75rem 0 1.25rem; }
+  .gate .btn { display: block; width: 100%; margin-top: .6rem; padding: .75rem 1rem; }
+  .gate .note { font-size: .85rem; margin: 1rem 0 0; }
+  .acc-h { font-size: .95rem; font-weight: 600; color: var(--muted); margin: 0 0 .5rem; }
+  .acc-list .tag { font-size: .75rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: .1rem .5rem; }
+  .gate .field { text-align: left; margin-bottom: .75rem; }
+  .gate .err { min-height: 1.2rem; margin-bottom: .25rem; }
 </style>
 </head>
 <body>
@@ -288,7 +307,8 @@
         <button class="btn" id="export" type="button">Exportar</button>
         <button class="btn" id="import" type="button">Importar</button>
         <button class="btn" id="theme" type="button" aria-label="Alternar tema claro e escuro">Tema</button>
-        <button class="btn" id="connect" type="button">GitHub</button>
+        <button class="btn" id="connect" type="button">Entrar</button>
+        <button class="btn" id="access" type="button" hidden>Acesso</button>
         <button class="btn" id="replay" type="button">Intro</button>
         <input type="file" id="file" accept="application/json" hidden>
       </div>
@@ -355,28 +375,50 @@
   </form>
 </dialog>
 
-<dialog id="cfg">
-  <form id="cfgForm" method="dialog" novalidate>
-    <h2>Conectar ao GitHub</h2>
-    <p class="help">Para salvar links direto no seu repositório (e ver os mesmos links em qualquer aparelho), crie um token que só tenha acesso a este repositório:</p>
-    <ol class="help">
-      <li>No GitHub: <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</b>.</li>
-      <li>Em <b>Repository access</b>, escolha <b>Only select repositories</b> e marque o repositório do site.</li>
-      <li>Em <b>Permissions → Repository permissions</b>, coloque <b>Contents: Read and write</b>.</li>
-      <li>Gere o token e cole abaixo.</li>
-    </ol>
-    <div class="field"><label for="cOwner">Usuário do GitHub</label><input id="cOwner" type="text" autocomplete="off"></div>
-    <div class="field"><label for="cRepo">Nome do repositório</label><input id="cRepo" type="text" autocomplete="off"></div>
-    <div class="field"><label for="cToken">Token</label><input id="cToken" type="password" autocomplete="off" placeholder="github_pat_..."></div>
-    <p class="help">O token fica salvo só neste navegador. Use apenas em aparelhos seus.</p>
-    <div class="err" id="cErr" role="alert"></div>
+<dialog id="acc">
+  <form id="accForm" method="dialog" novalidate>
+    <h2>Quem tem acesso</h2>
+    <p class="help">Só você (dono) altera esta lista. <b>Acesso total</b> vê, adiciona, edita e exclui links. <b>Só ver</b> apenas consulta os links, sem mexer em nada. Quem entra pela primeira vez cai em <b>Pedidos de acesso</b> e você decide: Acesso total, Só ver ou Negar.</p>
+    <h3 class="acc-h" id="reqH">Pedidos de acesso</h3>
+    <ul class="acc-list" id="reqList"></ul>
+    <h3 class="acc-h">Com acesso</h3>
+    <ul class="acc-list" id="accList"></ul>
+    <div class="two">
+      <div class="field"><label for="aEmail">E-mail da pessoa</label><input id="aEmail" type="email" autocomplete="off" placeholder="pessoa@email.com"></div>
+      <div class="field"><label for="aRole">Papel</label><select id="aRole"><option value="editor">Acesso total (vê e edita)</option><option value="viewer">Só ver</option></select></div>
+    </div>
+    <div class="err" id="aErr" role="alert"></div>
     <div class="row-btns">
-      <button class="btn danger" type="button" id="cOff">Desconectar</button>
-      <button class="btn" type="button" id="cCancel">Cancelar</button>
-      <button class="btn primary" type="submit">Conectar</button>
+      <button class="btn" type="button" id="aClose">Fechar</button>
+      <button class="btn primary" type="submit">Conceder acesso</button>
     </div>
   </form>
 </dialog>
+
+<div class="gate" id="gate" role="dialog" aria-label="Entrar" hidden>
+  <div>
+    <div id="gateDragon"></div>
+    <h2 class="display">Cyber Study</h2>
+    <form id="authForm" novalidate>
+      <p id="gHint">Entre com seu e-mail e senha. No primeiro acesso, o dono precisa aprovar sua conta.</p>
+      <div class="field" id="gNameF" hidden><label for="gName">Nome</label><input id="gName" type="text" autocomplete="name"></div>
+      <div class="field"><label for="gEmail">E-mail</label><input id="gEmail" type="email" autocomplete="username"></div>
+      <div class="field"><label for="gPass">Senha</label><input id="gPass" type="password" autocomplete="current-password"></div>
+      <div class="err" id="gErr" role="alert"></div>
+      <button class="btn primary" id="gSubmit" type="submit">Entrar</button>
+      <button class="btn" id="gMode" type="button">Criar conta</button>
+      <button class="btn" id="gReset" type="button">Esqueci a senha</button>
+      <button class="btn" id="gSkip" type="button" hidden>Só ver os links</button>
+    </form>
+    <div id="gVerify" hidden>
+      <p>Enviamos um link de confirmação para <b id="gVMail"></b>. Abra o e-mail, clique no link e volte aqui.</p>
+      <button class="btn primary" id="gVDone" type="button">Já confirmei</button>
+      <button class="btn" id="gVResend" type="button">Reenviar e-mail</button>
+      <button class="btn" id="gVOut" type="button">Sair</button>
+    </div>
+    <p class="note" id="gNote"></p>
+  </div>
+</div>
 
 <div class="intro" id="intro" role="dialog" aria-label="Introdução" hidden>
   <div>
@@ -392,13 +434,23 @@
 <script>
 (function () {
   var STATUS_KEY = "links-de-estudo-status";
-  var CFG_KEY = "links-de-estudo-github";
   var THEME_KEY = "links-de-estudo-tema";
   var TEAM_KEY = "links-de-estudo-time";
   var SECTION_KEY = "links-de-estudo-secao";
   var RANK_KEY = "links-de-estudo-rank";
   var INTRO_KEY = "links-de-estudo-intro";
-  var FILE = "links.json";
+  /* ====== CONFIGURAÇÃO: estes valores são preenchidos no deploy pelos Secrets do GitHub (veja o README).
+     Para testar sem o deploy, troque cada valor pelo do seu projeto Firebase. ====== */
+  var FIREBASE_CONFIG = {
+    apiKey: "__FIREBASE_API_KEY__",
+    authDomain: "__FIREBASE_AUTH_DOMAIN__",
+    projectId: "__FIREBASE_PROJECT_ID__",
+    storageBucket: "__FIREBASE_STORAGE_BUCKET__",
+    messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
+    appId: "__FIREBASE_APP_ID__"
+  };
+  /* E-mail do DONO do painel. Precisa ser o mesmo que está no firestore.rules. */
+  var OWNER_EMAIL = "__OWNER_EMAIL__";
   var STATUS = ["todo", "doing", "done"];
   var LABELS = {
     estudo: { todo: "A estudar", doing: "Estudando", done: "Concluído" },
@@ -462,20 +514,13 @@
     red: ["Módulo Ataque · Red team", "Pense como o atacante."],
     vaga: ["Módulo Carreira · Vagas", "Transforme estudo em oportunidade."]
   };
-  var links = [], statusMap = {}, sha = null, section = "estudo", loaded = false;
-  var cfg = { owner: "", repo: "", token: "" };
+  var links = [], section = "estudo", loaded = false;
   var teamFilter = "all", filterCat = "", editingId = null;
   var $ = function (id) { return document.getElementById(id); };
 
   function readLS(k, fb) { try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : fb; } catch (e) { return fb; } }
   function writeLS(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-  function guessRepo() {
-    var h = location.hostname, o = { owner: "", repo: "" };
-    if (/\.github\.io$/i.test(h)) { o.owner = h.split(".")[0]; o.repo = location.pathname.split("/")[1] || h; }
-    return o;
-  }
-  function statusOf(l) { return statusMap[l.id] || "todo"; }
-  function connected() { return !!(cfg.token && cfg.owner && cfg.repo); }
+  function statusOf(l) { return l.status || "todo"; }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function normalizeUrl(u) {
     u = (u || "").trim(); if (!u) return "";
@@ -497,70 +542,135 @@
     clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove("on"); }, 2600);
   }
 
-  /* ---------- GitHub (links.json no repositório) ---------- */
-  function b64encode(str) { var by = new TextEncoder().encode(str), bin = ""; by.forEach(function (b) { bin += String.fromCharCode(b); }); return btoa(bin); }
-  function b64decode(b64) { var bin = atob(b64.replace(/\s/g, "")), by = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) by[i] = bin.charCodeAt(i); return new TextDecoder().decode(by); }
-  function api(method, body) {
-    return fetch("https://api.github.com/repos/" + encodeURIComponent(cfg.owner) + "/" + encodeURIComponent(cfg.repo) + "/contents/" + FILE, {
-      method: method,
-      headers: { "Accept": "application/vnd.github+json", "Authorization": "Bearer " + cfg.token },
-      body: body ? JSON.stringify(body) : undefined
-    });
+  /* ---------- Firebase (Firestore + login por e-mail e senha) ---------- */
+  var configured = !!FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.indexOf("__") !== 0;
+  var A, B, F, auth, db;
+  var user = null, role = "none", canEdit = false, isOwner = false, locked = false;
+  var unsubLinks = null, unsubEditors = null, unsubReqs = null, editorsList = [], reqList = [], reqStatus = "", gateSkipped = false;
+  var dirty = {}, saveT = {}, deferRender = false;
+  var ROLE_TXT = { owner: "dono", editor: "acesso total", viewer: "só vê", none: "aguardando aprovação do dono" };
+
+  function cleanOne(d) {
+    return {
+      id: String(d.id || uid()), url: String(d.url), title: String(d.title || host(d.url)),
+      section: d.section === "vaga" ? "vaga" : "estudo", team: TEAMS[d.team] ? d.team : "both", type: String(d.type || ""),
+      cat: String(d.cat || ""), note: String(d.note || ""), added: Number(d.added) || Date.now(),
+      notes: String(d.notes || ""), status: STATUS.indexOf(d.status) > -1 ? d.status : "todo",
+      checklist: Array.isArray(d.checklist) ? d.checklist.filter(function (c) { return c && c.t; }).map(function (c) {
+        return { id: String(c.id || uid()), t: String(c.t), d: !!c.d };
+      }) : []
+    };
   }
   function cleanList(data) {
     if (!Array.isArray(data)) return [];
-    return data.filter(function (d) { return d && d.url; }).map(function (d) {
-      return {
-        id: String(d.id || uid()), url: String(d.url), title: String(d.title || host(d.url)),
-        section: d.section === "vaga" ? "vaga" : "estudo", team: TEAMS[d.team] ? d.team : "both", type: String(d.type || ""),
-        cat: String(d.cat || ""), note: String(d.note || ""), added: Number(d.added) || Date.now(),
-        notes: String(d.notes || ""),
-        checklist: Array.isArray(d.checklist) ? d.checklist.filter(function (c) { return c && c.t; }).map(function (c) {
-          return { id: String(c.id || uid()), t: String(c.t), d: !!c.d };
-        }) : []
-      };
-    });
+    return data.filter(function (d) { return d && d.url; }).map(cleanOne);
   }
-  function load() {
-    if (connected()) {
-      return api("GET").then(function (r) {
-        if (r.status === 404) { links = []; sha = null; return; }
-        if (!r.ok) throw new Error(r.status === 401 ? "token" : "api");
-        return r.json().then(function (j) { sha = j.sha; links = cleanList(JSON.parse(b64decode(j.content) || "[]")); });
-      });
-    }
-    return fetch(FILE, { cache: "no-store" }).then(function (r) {
-      if (r.status === 404) { links = []; return; }
-      if (!r.ok) throw new Error("fetch");
-      return r.json().then(function (d) { links = cleanList(d); });
-    });
-  }
-  function commit(next, msg) {
-    if (!connected()) { openCfg(); return Promise.resolve(false); }
-    toast("Salvando no GitHub...");
-    var body = { message: msg, content: b64encode(JSON.stringify(next, null, 2) + "\n") };
-    if (sha) body.sha = sha;
-    return api("PUT", body).then(function (r) {
-      if (!r.ok) {
-        if (r.status === 401 || r.status === 403 || r.status === 404) throw new Error("Token sem permissão ou repositório errado. Confira em GitHub.");
-        if (r.status === 409 || r.status === 422) throw new Error("O arquivo mudou no GitHub. Recarregue a página e tente de novo.");
-        throw new Error("Não foi possível salvar (erro " + r.status + ").");
-      }
-      return r.json().then(function (j) { sha = j.content.sha; links = next; toast("Salvo no seu repositório"); return true; });
-    }).catch(function (e) { toast(e.message || "Erro de conexão ao salvar."); return false; });
+  function toDoc(l) {
+    return { url: l.url, title: l.title, section: l.section, team: l.team, type: l.type, cat: l.cat, note: l.note,
+             added: l.added, notes: l.notes, checklist: l.checklist, status: l.status };
   }
 
+  function denied() {
+    toast(user ? "Sua conta não tem permissão para editar. Peça acesso ao dono." : "Clique em Entrar para editar os links.");
+  }
+  function guard() { if (!canEdit) { denied(); return false; } return true; }
+  function fail(e) {
+    toast(e && e.code === "permission-denied" ? "Sem permissão para salvar. Entre com uma conta autorizada." : "Não foi possível salvar. Verifique a conexão.");
+    return false;
+  }
+  function saveLink(l) {
+    if (!guard()) return Promise.resolve(false);
+    var c = cleanOne(l);
+    return F.setDoc(F.doc(db, "links", c.id), toDoc(c)).then(function () { return true; }).catch(fail);
+  }
+  function removeLink(id) {
+    if (!guard()) return Promise.resolve(false);
+    return F.deleteDoc(F.doc(db, "links", id)).then(function () { return true; }).catch(fail);
+  }
+  function saveMany(items) {
+    if (!guard()) return Promise.resolve(false);
+    var list = items.map(cleanOne), chunks = [];
+    for (var i = 0; i < list.length; i += 400) chunks.push(list.slice(i, i + 400));
+    return chunks.reduce(function (p, ch) {
+      return p.then(function () {
+        var b = F.writeBatch(db);
+        ch.forEach(function (l) { b.set(F.doc(db, "links", l.id), toDoc(l)); });
+        return b.commit();
+      });
+    }, Promise.resolve()).then(function () { return true; }).catch(fail);
+  }
   /* Salva alterações pequenas (checklist, anotações) depois de uma pausa */
-  var flushT = null, flushing = Promise.resolve(), pending = false;
-  function guard() { if (!connected()) { openCfg(); return false; } return true; }
-  function scheduleSave(msg) {
-    pending = true; clearTimeout(flushT);
-    flushT = setTimeout(function () {
-      flushing = flushing.then(function () { return commit(links.slice(), msg); })
-        .then(function (ok) { pending = false; if (!ok) start(); });
+  function scheduleSave(l) {
+    dirty[l.id] = true; clearTimeout(saveT[l.id]);
+    saveT[l.id] = setTimeout(function () {
+      F.updateDoc(F.doc(db, "links", l.id), { checklist: l.checklist, notes: l.notes })
+        .then(function () { delete dirty[l.id]; })
+        .catch(function (e) { delete dirty[l.id]; fail(e); });
     }, 700);
   }
-  window.addEventListener("beforeunload", function (e) { if (pending) { e.preventDefault(); e.returnValue = ""; } });
+  window.addEventListener("beforeunload", function (e) { if (Object.keys(dirty).length) { e.preventDefault(); e.returnValue = ""; } });
+
+  function subscribeLinks() {
+    if (unsubLinks) { unsubLinks(); unsubLinks = null; }
+    unsubLinks = F.onSnapshot(F.collection(db, "links"), function (snap) {
+      locked = false;
+      var local = {}; links.forEach(function (l) { local[l.id] = l; });
+      links = snap.docs.map(function (d) {
+        return dirty[d.id] && local[d.id] ? local[d.id] : cleanOne(Object.assign({}, d.data(), { id: d.id }));
+      });
+      loaded = true; paintGate();
+      var a = document.activeElement;
+      if (a && $("list").contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName)) {
+        deferRender = true; renderBanner(); renderProgress(); renderCats();
+      } else render();
+    }, function (err) {
+      links = []; loaded = true;
+      locked = !!(err && err.code === "permission-denied");
+      render(); paintConn();
+      if (!locked) toast("Não foi possível carregar os links. Verifique a conexão.");
+    });
+  }
+  $("list").addEventListener("focusout", function () {
+    if (deferRender) { deferRender = false; setTimeout(render, 0); }
+  });
+
+  function applyRole(r) { role = r; isOwner = r === "owner"; canEdit = r === "owner" || r === "editor"; }
+  function resolveRole(u) {
+    if (!u || !u.email || !u.emailVerified) return Promise.resolve("none");
+    var email = u.email.toLowerCase();
+    if (email === OWNER_EMAIL.toLowerCase()) return Promise.resolve("owner");
+    return F.getDoc(F.doc(db, "editors", email)).then(function (s) {
+      var r = s.exists() ? s.data().role : "none";
+      return (r === "editor" || r === "viewer") ? r : "none";
+    }).catch(function () { return "none"; });
+  }
+  /* Quem entra sem permissão gera um pedido de acesso para o dono aprovar */
+  function ensureRequest(u) {
+    reqStatus = "";
+    if (!u || !u.email || !u.emailVerified || canEdit || role === "viewer") return Promise.resolve();
+    var email = u.email.toLowerCase(), ref = F.doc(db, "requests", email);
+    return F.getDoc(ref).then(function (s) {
+      if (s.exists()) { reqStatus = s.data().status || "pending"; return; }
+      return F.setDoc(ref, { email: email, name: u.displayName || "", status: "pending", requestedAt: Date.now() })
+        .then(function () { reqStatus = "pending"; toast("Pedido de acesso enviado ao dono."); });
+    }).catch(function () {});
+  }
+  function subscribeEditors() {
+    if (unsubEditors) { unsubEditors(); unsubEditors = null; }
+    if (unsubReqs) { unsubReqs(); unsubReqs = null; }
+    editorsList = []; reqList = [];
+    if (!isOwner) return;
+    unsubReqs = F.onSnapshot(F.collection(db, "requests"), function (snap) {
+      reqList = snap.docs.map(function (d) { var x = d.data(); return { email: d.id, name: x.name || "", status: x.status || "pending", at: x.requestedAt || 0 }; })
+        .sort(function (a, b) { return b.at - a.at; });
+      paintAccess(); paintConn();
+    }, function () {});
+    unsubEditors = F.onSnapshot(F.collection(db, "editors"), function (snap) {
+      editorsList = snap.docs.map(function (d) { return { email: d.id, role: d.data().role }; })
+        .sort(function (a, b) { return a.email.localeCompare(b.email); });
+      paintAccess();
+    }, function () {});
+  }
 
   /* ---------- Renderização ---------- */
   function rankFor(count) {
@@ -672,14 +782,14 @@
       var cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = c.d; cb.setAttribute("aria-label", c.t);
       cb.addEventListener("change", function () {
         if (!guard()) { cb.checked = !cb.checked; return; }
-        c.d = cb.checked; scheduleSave("Update checklist: " + l.title); render();
+        c.d = cb.checked; scheduleSave(l); render();
       });
       var sp = document.createElement("span"); sp.textContent = c.t;
       var x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", "Remover item " + c.t);
       x.addEventListener("click", function () {
         if (!guard()) return;
         l.checklist = l.checklist.filter(function (k) { return k.id !== c.id; });
-        scheduleSave("Update checklist: " + l.title); render();
+        scheduleSave(l); render();
       });
       li.appendChild(cb); li.appendChild(sp); li.appendChild(x); ul.appendChild(li);
     });
@@ -691,7 +801,7 @@
       var t = inp.value.trim(); if (!t) return;
       if (!guard()) return;
       l.checklist.push({ id: uid(), t: t, d: false });
-      focusAdd = l.id; scheduleSave("Update checklist: " + l.title); render();
+      focusAdd = l.id; scheduleSave(l); render();
     }
     btn.addEventListener("click", addItem);
     inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); addItem(); } });
@@ -699,13 +809,13 @@
 
     var right = document.createElement("div");
     var h2 = document.createElement("h3"); h2.textContent = "Anotações"; right.appendChild(h2);
-    var ta = document.createElement("textarea"); ta.value = l.notes; ta.placeholder = "Resumos, comandos, dúvidas, o que você aprendeu...";
+    var ta = document.createElement("textarea"); ta.value = l.notes; ta.readOnly = !canEdit; ta.placeholder = "Resumos, comandos, dúvidas, o que você aprendeu...";
     ta.setAttribute("aria-label", "Anotações de " + l.title);
-    ta.addEventListener("focus", function () { if (!connected()) { ta.blur(); openCfg(); } });
-    ta.addEventListener("input", function () { l.notes = ta.value; });
-    ta.addEventListener("change", function () { scheduleSave("Update notes: " + l.title); });
+    ta.addEventListener("focus", function () { if (!canEdit) { ta.blur(); denied(); } });
+    ta.addEventListener("input", function () { if (canEdit) { l.notes = ta.value; dirty[l.id] = true; } });
+    ta.addEventListener("change", function () { scheduleSave(l); });
     right.appendChild(ta);
-    var hint = document.createElement("p"); hint.className = "hint"; hint.textContent = "Salva sozinho no seu repositório quando você sai do campo.";
+    var hint = document.createElement("p"); hint.className = "hint"; hint.textContent = "Salva sozinho na nuvem quando você sai do campo.";
     right.appendChild(hint);
 
     box.appendChild(left); box.appendChild(right);
@@ -722,6 +832,10 @@
     if (!items.length) {
       var li = document.createElement("li"); li.className = "empty";
       var h = document.createElement("h2"), p = document.createElement("p");
+      if (locked) {
+        h.textContent = "Conteúdo privado"; p.textContent = user ? "Seu pedido de acesso foi enviado. Quando o dono aprovar, os links aparecem aqui." : "Clique em Entrar e use uma conta autorizada para ver os links.";
+        li.appendChild(h); li.appendChild(p); ul.appendChild(li); return;
+      }
       if (total === 0) {
         h.textContent = section === "vaga" ? "Nenhuma vaga salva ainda" : "Nenhum link salvo ainda";
         p.textContent = section === "vaga" ? "Adicione sites de vagas e anúncios que você quer acompanhar." : "Adicione o primeiro link ou comece com uma lista de sugestões para Blue e Red team.";
@@ -746,8 +860,10 @@
       st.type = "button"; st.className = "state"; st.dataset.s = s;
       st.setAttribute("aria-label", "Status: " + LABELS[section][s] + ". Clique para mudar."); st.title = LABELS[section][s];
       st.addEventListener("click", function () {
-        statusMap[l.id] = STATUS[(STATUS.indexOf(s) + 1) % STATUS.length];
-        writeLS(STATUS_KEY, statusMap); render();
+        if (!guard()) return;
+        var ns = STATUS[(STATUS.indexOf(s) + 1) % STATUS.length];
+        l.status = ns; render();
+        F.updateDoc(F.doc(db, "links", l.id), { status: ns }).catch(function (e) { l.status = s; render(); fail(e); });
       });
 
       var ico = document.createElement("div"); ico.className = "ico";
@@ -777,10 +893,10 @@
       var del = document.createElement("button"); del.type = "button"; del.className = "del"; del.textContent = "Excluir";
       del.addEventListener("click", function () {
         if (confirm("Excluir “" + l.title + "”?")) {
-          commit(links.filter(function (x) { return x.id !== l.id; }), "Remove link: " + l.title).then(function (ok) { if (ok) render(); });
+          removeLink(l.id);
         }
       });
-      acts.appendChild(dt); acts.appendChild(ed); acts.appendChild(del);
+      acts.appendChild(dt); if (canEdit) { acts.appendChild(ed); acts.appendChild(del); }
       li.appendChild(st); li.appendChild(ico); li.appendChild(main); li.appendChild(acts);
       if (openIds[l.id]) li.appendChild(buildDetail(l));
       ul.appendChild(li);
@@ -798,7 +914,7 @@
     var add = (section === "vaga" ? JOB_STARTER : STARTER).map(function (s, i) {
       return { id: uid(), section: section, url: s.url, title: s.title, team: s.team, type: s.type, cat: s.cat, note: s.note, added: now - i };
     });
-    commit(links.concat(add), "Add starter links").then(function (ok) { if (ok) render(); });
+    saveMany(add);
   }
 
   /* ---------- Adicionar / editar ---------- */
@@ -810,7 +926,7 @@
     pool.forEach(function (c) { if (seen[c]) return; seen[c] = 1; var o = document.createElement("option"); o.value = c; dl.appendChild(o); });
   }
   function openDialog(l) {
-    if (!connected()) { openCfg(); return; }
+    if (!guard()) return;
     editingId = l ? l.id : null;
     var job = section === "vaga";
     $("dlgTitle").textContent = (l ? "Editar " : "Adicionar ") + (job ? "vaga" : "link");
@@ -838,14 +954,11 @@
     var url = normalizeUrl($("fUrl").value);
     if (!url) { $("err").textContent = "Digite um endereço válido, como https://exemplo.com"; $("fUrl").focus(); return; }
     var rec = { url: url, title: $("fTitle").value.trim() || host(url), team: $("fTeam").value, type: $("fType").value, cat: $("fCat").value.trim(), note: $("fNote").value.trim() };
-    var next;
-    if (editingId) {
-      next = links.map(function (x) { return x.id === editingId ? Object.assign({}, x, rec, { id: x.id, added: x.added, section: x.section }) : x; });
-    } else {
-      next = links.concat([Object.assign({}, rec, { id: uid(), added: Date.now(), section: section })]);
-    }
+    var base = editingId ? links.filter(function (x) { return x.id === editingId; })[0] : null;
+    var obj = base ? Object.assign({}, base, rec)
+                   : Object.assign({}, rec, { id: uid(), added: Date.now(), section: section, status: "todo" });
     $("save").disabled = true;
-    commit(next, (editingId ? "Update link: " : "Add link: ") + rec.title).then(function (ok) {
+    saveLink(obj).then(function (ok) {
       $("save").disabled = false; if (ok) { dlg.close(); render(); }
     });
   });
@@ -892,7 +1005,7 @@
         var known = {}; links.forEach(function (l) { known[l.url] = true; });
         var add = cleanList(data).filter(function (d) { var u = normalizeUrl(d.url); if (!u || known[u]) return false; known[u] = true; d.url = u; d.id = uid(); return true; });
         if (!add.length) { toast("Nenhum link novo no arquivo"); return; }
-        commit(links.concat(add), "Import " + add.length + " links").then(function (ok) { if (ok) render(); });
+        if (guard()) saveMany(add);
       } catch (err) { toast("Arquivo inválido. Use um .json exportado daqui."); }
       $("file").value = "";
     };
@@ -907,42 +1020,204 @@
     applyTheme(next); writeLS(THEME_KEY, next);
   });
 
-  /* ---------- Conexão com o GitHub ---------- */
-  var cdlg = $("cfg");
+  /* ---------- Login e controle de acesso ---------- */
   function paintConn() {
-    $("conn").textContent = connected() ? "Conectado a " + cfg.owner + "/" + cfg.repo : "Somente leitura. Conecte o GitHub para adicionar links.";
+    var c = $("conn");
+    if (!configured) c.textContent = "Firebase não configurado. Veja o README.";
+    else if (!user) c.textContent = locked ? "Conteúdo privado. Entre para ver." : "Modo leitura. Entre para editar.";
+    else if (!user.emailVerified) c.textContent = user.email + " · confirme seu e-mail";
+    else c.textContent = user.email + " · " + (role === "none" && reqStatus === "denied" ? "acesso negado" : ROLE_TXT[role]);
+    $("connect").textContent = user ? "Sair" : "Entrar";
+    $("access").hidden = !isOwner;
+    var pend = reqList.filter(function (p) { return p.status === "pending"; }).length;
+    $("access").textContent = pend ? "Acesso (" + pend + ")" : "Acesso";
+    paintGate();
+    $("add").hidden = !canEdit;
   }
-  function openCfg() {
-    var g = guessRepo();
-    $("cOwner").value = cfg.owner || g.owner; $("cRepo").value = cfg.repo || g.repo; $("cToken").value = cfg.token || "";
-    $("cErr").textContent = ""; cdlg.showModal();
+  var authMode = "login", IDLE_MS = 15 * 60 * 1000, idleT = null, lastAct = 0;
+  function paintGate() {
+    var needVerify = !!user && !user.emailVerified;
+    var show = configured && !!auth && (needVerify || (!user && !(gateSkipped && !locked)));
+    $("gate").hidden = !show;
+    $("authForm").hidden = needVerify; $("gVerify").hidden = !needVerify;
+    $("gVMail").textContent = user && user.email ? user.email : "";
+    $("gSkip").hidden = locked || !loaded;
+    $("gNote").textContent = locked ? "Este painel é privado. Só contas aprovadas pelo dono conseguem ver os links." : "";
+    if (show && !$("gateDragon").innerHTML) $("gateDragon").innerHTML = dragonImg("all");
   }
-  $("connect").addEventListener("click", openCfg);
-  $("cCancel").addEventListener("click", function () { cdlg.close(); });
-  $("cOff").addEventListener("click", function () {
-    cfg.token = ""; writeLS(CFG_KEY, cfg); sha = null; paintConn(); cdlg.close(); start(); toast("GitHub desconectado");
-  });
-  $("cfgForm").addEventListener("submit", function (e) {
-    e.preventDefault();
-    var o = $("cOwner").value.trim(), r = $("cRepo").value.trim(), t = $("cToken").value.trim();
-    if (!o || !r || !t) { $("cErr").textContent = "Preencha usuário, repositório e token."; return; }
-    cfg = { owner: o, repo: r, token: t };
-    api("GET").then(function (res) {
-      if (res.status === 401 || res.status === 403) throw new Error("Token inválido ou sem permissão de Contents.");
-      if (res.status === 404) {
-        return fetch("https://api.github.com/repos/" + encodeURIComponent(o) + "/" + encodeURIComponent(r), { headers: { "Authorization": "Bearer " + t } })
-          .then(function (rr) { if (!rr.ok) throw new Error("Repositório não encontrado com esse token. Confira usuário, nome e acesso."); });
-      }
-    }).then(function () {
-      writeLS(CFG_KEY, cfg); paintConn(); cdlg.close(); start(); toast("GitHub conectado");
-    }).catch(function (err) { cfg.token = ""; $("cErr").textContent = err.message; });
+  function setMode(m) {
+    authMode = m; var su = m === "signup";
+    $("gNameF").hidden = !su; $("gReset").hidden = su;
+    $("gSubmit").textContent = su ? "Criar conta" : "Entrar";
+    $("gMode").textContent = su ? "Já tenho conta" : "Criar conta";
+    $("gPass").autocomplete = su ? "new-password" : "current-password";
+    $("gHint").textContent = su ? "Crie sua conta e confirme o e-mail. Depois o dono precisa aprovar seu acesso." : "Entre com seu e-mail e senha. No primeiro acesso, o dono precisa aprovar sua conta.";
+    $("gErr").textContent = "";
+  }
+  function authMsg(e) {
+    var m = {
+      "auth/invalid-credential": "E-mail ou senha incorretos.", "auth/wrong-password": "E-mail ou senha incorretos.",
+      "auth/user-not-found": "E-mail ou senha incorretos.", "auth/invalid-email": "E-mail inválido.",
+      "auth/email-already-in-use": "Já existe uma conta com esse e-mail. Use Entrar.",
+      "auth/weak-password": "Senha fraca. Use pelo menos 8 caracteres.",
+      "auth/too-many-requests": "Muitas tentativas. Espere um pouco e tente de novo.",
+      "auth/network-request-failed": "Sem conexão. Verifique a internet.",
+      "auth/operation-not-allowed": "Login por e-mail e senha desativado. Ative em Authentication → Sign-in method."
+    };
+    return m[e && e.code] || "Não foi possível concluir. Tente de novo.";
+  }
+  function validEmail(v) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v); }
+  function clearSkip() { gateSkipped = false; try { sessionStorage.removeItem("links-de-estudo-skip"); } catch (e) {} }
+
+  /* Encerra a sessão após 15 minutos sem atividade */
+  function resetIdle(force) {
+    var n = Date.now();
+    if (!user || (!force && n - lastAct < 5000)) return;
+    lastAct = n; clearTimeout(idleT);
+    idleT = setTimeout(function () {
+      if (!user || !auth) return;
+      clearSkip();
+      B.signOut(auth).then(function () { toast("Sessão encerrada após 15 minutos sem atividade."); });
+    }, IDLE_MS);
+  }
+  ["mousemove", "keydown", "click", "touchstart", "scroll"].forEach(function (ev) {
+    window.addEventListener(ev, function () { resetIdle(false); }, { passive: true });
   });
 
-  function start() {
-    return load().then(function () { loaded = true; render(); }).catch(function (e) {
-      links = []; render();
-      toast(e.message === "token" ? "Token recusado. Reconecte o GitHub." : "Não foi possível carregar links.json. Ele existe no repositório?");
+  function afterUser(u) {
+    user = u;
+    if (u) resetIdle(true); else clearTimeout(idleT);
+    return resolveRole(u).then(function (r) { applyRole(r); return ensureRequest(u); })
+      .then(function () { subscribeEditors(); subscribeLinks(); paintConn(); render(); });
+  }
+
+  $("gMode").addEventListener("click", function () { setMode(authMode === "login" ? "signup" : "login"); });
+  $("gSkip").addEventListener("click", function () {
+    gateSkipped = true; try { sessionStorage.setItem("links-de-estudo-skip", "1"); } catch (e) {}
+    paintGate();
+  });
+  $("authForm").addEventListener("submit", function (e) {
+    e.preventDefault(); $("gErr").textContent = "";
+    if (!auth) { $("gErr").textContent = configured ? "Ainda carregando o Firebase..." : "Firebase não configurado. Veja o README."; return; }
+    var em = $("gEmail").value.trim(), pw = $("gPass").value;
+    if (!validEmail(em)) { $("gErr").textContent = "Digite um e-mail válido."; return; }
+    if (!pw) { $("gErr").textContent = "Digite a senha."; return; }
+    var su = authMode === "signup";
+    if (su && pw.length < 8) { $("gErr").textContent = "A senha precisa ter pelo menos 8 caracteres."; return; }
+    $("gSubmit").disabled = true;
+    var p = su
+      ? B.createUserWithEmailAndPassword(auth, em, pw).then(function (c) {
+          var nm = $("gName").value.trim();
+          return (nm ? B.updateProfile(c.user, { displayName: nm }) : Promise.resolve())
+            .then(function () { return B.sendEmailVerification(c.user); });
+        })
+      : B.signInWithEmailAndPassword(auth, em, pw);
+    p.then(function () { $("gPass").value = ""; })
+     .catch(function (err) { $("gErr").textContent = authMsg(err); })
+     .then(function () { $("gSubmit").disabled = false; });
+  });
+  $("gReset").addEventListener("click", function () {
+    var em = $("gEmail").value.trim();
+    if (!auth) return;
+    if (!validEmail(em)) { $("gErr").textContent = "Digite seu e-mail acima e clique de novo."; return; }
+    B.sendPasswordResetEmail(auth, em)
+      .then(function () { $("gErr").textContent = ""; toast("Se existir uma conta com esse e-mail, enviamos o link para redefinir a senha."); })
+      .catch(function (err) { $("gErr").textContent = authMsg(err); });
+  });
+  $("gVDone").addEventListener("click", function () {
+    var u = auth && auth.currentUser; if (!u) return;
+    u.reload().then(function () { return u.getIdToken(true); }).then(function () {
+      if (!u.emailVerified) { toast("Ainda não confirmado. Abra o link do e-mail e tente de novo."); paintGate(); return; }
+      return afterUser(u);
+    }).catch(function () { toast("Não foi possível verificar agora."); });
+  });
+  $("gVResend").addEventListener("click", function () {
+    var u = auth && auth.currentUser; if (!u) return;
+    B.sendEmailVerification(u).then(function () { toast("E-mail reenviado."); }).catch(function (err) { toast(authMsg(err)); });
+  });
+  $("gVOut").addEventListener("click", function () { if (auth) B.signOut(auth); });
+  $("connect").addEventListener("click", function () {
+    if (!configured || !auth) { toast(configured ? "Ainda carregando o Firebase..." : "Firebase não configurado. Veja o README."); return; }
+    if (user) { B.signOut(auth).then(function () { clearSkip(); toast("Você saiu"); }); return; }
+    clearSkip(); paintGate(); $("gEmail").focus();
+  });
+
+  var adlg = $("acc");
+  function grant(email, r) {
+    var b = F.writeBatch(db);
+    b.set(F.doc(db, "editors", email), { role: r, addedAt: Date.now() });
+    b.delete(F.doc(db, "requests", email));
+    return b.commit().then(function () { toast("Acesso concedido a " + email); }).catch(fail);
+  }
+  function paintRequests() {
+    var ul = $("reqList"); ul.innerHTML = "";
+    if (!reqList.length) { var e = document.createElement("li"); e.className = "muted"; e.textContent = "Nenhum pedido no momento."; ul.appendChild(e); return; }
+    reqList.forEach(function (p) {
+      var li = document.createElement("li"), em = document.createElement("span");
+      em.textContent = (p.name ? p.name + " · " : "") + p.email;
+      li.appendChild(em);
+      if (p.status === "denied") { var t = document.createElement("span"); t.className = "tag"; t.textContent = "negado"; li.appendChild(t); }
+      [["Acesso total", "editor"], ["Só ver", "viewer"]].forEach(function (r) {
+        var b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = r[0];
+        b.setAttribute("aria-label", r[0] + ": " + p.email);
+        b.addEventListener("click", function () { grant(p.email, r[1]); });
+        li.appendChild(b);
+      });
+      var n = document.createElement("button"); n.type = "button"; n.className = "btn danger"; n.textContent = p.status === "denied" ? "Apagar" : "Negar";
+      n.addEventListener("click", function () {
+        var ref = F.doc(db, "requests", p.email);
+        (p.status === "denied" ? F.deleteDoc(ref) : F.updateDoc(ref, { status: "denied" })).catch(fail);
+      });
+      li.appendChild(n); ul.appendChild(li);
     });
+  }
+  function paintAccess() {
+    paintRequests();
+    var ul = $("accList"); ul.innerHTML = "";
+    if (!editorsList.length) {
+      var e = document.createElement("li"); e.className = "muted"; e.textContent = "Ninguém além de você ainda."; ul.appendChild(e); return;
+    }
+    editorsList.forEach(function (p) {
+      var li = document.createElement("li"), em = document.createElement("span"); em.textContent = p.email;
+      var sel = document.createElement("select"); sel.setAttribute("aria-label", "Papel de " + p.email);
+      [["editor", "Acesso total"], ["viewer", "Só ver"]].forEach(function (r) {
+        var o = document.createElement("option"); o.value = r[0]; o.textContent = r[1]; sel.appendChild(o);
+      });
+      sel.value = p.role;
+      sel.addEventListener("change", function () {
+        F.setDoc(F.doc(db, "editors", p.email), { role: sel.value, addedAt: Date.now() }).catch(fail);
+      });
+      var x = document.createElement("button"); x.type = "button"; x.className = "btn danger"; x.textContent = "Remover";
+      x.addEventListener("click", function () {
+        if (confirm("Remover o acesso de " + p.email + "?")) F.deleteDoc(F.doc(db, "editors", p.email)).catch(fail);
+      });
+      li.appendChild(em); li.appendChild(sel); li.appendChild(x); ul.appendChild(li);
+    });
+  }
+  $("access").addEventListener("click", function () { if (!isOwner) return; $("aErr").textContent = ""; paintAccess(); adlg.showModal(); });
+  $("aClose").addEventListener("click", function () { adlg.close(); });
+  $("accForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var em = $("aEmail").value.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { $("aErr").textContent = "Digite um e-mail válido."; return; }
+    if (em === OWNER_EMAIL.toLowerCase()) { $("aErr").textContent = "Esse e-mail já é o do dono."; return; }
+    F.setDoc(F.doc(db, "editors", em), { role: $("aRole").value, addedAt: Date.now() })
+      .then(function () { $("aEmail").value = ""; $("aErr").textContent = ""; toast("Acesso concedido a " + em); })
+      .catch(function (err) { $("aErr").textContent = err && err.code === "permission-denied" ? "Só o dono pode alterar a lista." : "Não foi possível salvar."; });
+  });
+
+  try { gateSkipped = sessionStorage.getItem("links-de-estudo-skip") === "1"; } catch (e) {}
+  var FB = "https://www.gstatic.com/firebasejs/10.12.2/";
+  function boot() {
+    if (!configured) { paintConn(); toast("Configure o Firebase no index.html (veja o README)."); return; }
+    Promise.all([import(FB + "firebase-app.js"), import(FB + "firebase-auth.js"), import(FB + "firebase-firestore.js")]).then(function (m) {
+      A = m[0]; B = m[1]; F = m[2];
+      var app = A.initializeApp(FIREBASE_CONFIG);
+      auth = B.getAuth(app); db = F.getFirestore(app);
+      B.setPersistence(auth, B.inMemoryPersistence).catch(function () {}).then(function () {
+        B.onAuthStateChanged(auth, function (u) { afterUser(u); });
+      });
+    }).catch(function () { $("conn").textContent = "Sem conexão com o Firebase."; toast("Não foi possível carregar o Firebase. Verifique a conexão."); });
   }
 
   /* ---------- Intro ---------- */
@@ -967,8 +1242,6 @@
   document.addEventListener("keydown", function (e) { if (!intro.hidden && (e.key === "Escape" || e.key === "Enter")) hideIntro(); });
   $("replay").addEventListener("click", showIntro);
 
-  statusMap = readLS(STATUS_KEY, {});
-  cfg = readLS(CFG_KEY, cfg);
   var savedTeam = readLS(TEAM_KEY, "all");
   teamFilter = (savedTeam === "blue" || savedTeam === "red") ? savedTeam : "all";
   section = readLS(SECTION_KEY, "estudo") === "vaga" ? "vaga" : "estudo";
@@ -978,7 +1251,7 @@
   var seen = false;
   try { seen = sessionStorage.getItem(INTRO_KEY) === "1"; } catch (e) {}
   if (!seen) showIntro();
-  start();
+  boot();
 })();
 </script>
 </body>
