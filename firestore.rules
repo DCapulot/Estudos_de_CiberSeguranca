@@ -10,7 +10,7 @@ service cloud.firestore {
     }
     // TROQUE pelo e-mail da conta Google dona do painel (o mesmo do OWNER_EMAIL no index.html)
     function isOwner() {
-      return signedIn() && email() == 'seu-email@gmail.com';
+      return signedIn() && email() == 'davidciberseguranca@gmail.com';
     }
     function member() {
       return exists(/databases/$(database)/documents/editors/$(email()));
