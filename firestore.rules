@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function email() {
+      return request.auth.token.email.lower();
+    }
+    // TROQUE pelo e-mail da conta Google dona do painel (o mesmo do OWNER_EMAIL no index.html)
+    function isOwner() {
+      return signedIn() && email() == 'seu-email@gmail.com';
+    }
+    function member() {
+      return exists(/databases/$(database)/documents/editors/$(email()));
+    }
+    function isEditor() {
+      return isOwner() || (signedIn() && member()
+        && get(/databases/$(database)/documents/editors/$(email())).data.role == 'editor');
+    }
+    function isMember() {
+      return isOwner() || (signedIn() && member());
+    }
+    function validLink() {
+      let d = request.resource.data;
+      return d.url is string && d.url.size() < 2048
+        && d.title is string && d.title.size() < 300
+        && d.section in ['estudo', 'vaga']
+        && d.team in ['blue', 'red', 'both']
+        && d.status in ['todo', 'doing', 'done'];
+    }
+
+    match /links/{id} {
+      // PRIVADO: só o dono e quem você aprovou (acesso total ou só ver) conseguem ler.
+      // Para deixar público, troque por: allow read: if true;
+      allow read: if isMember();
+      allow create, update: if isEditor() && validLink();
+      allow delete: if isEditor();
+    }
+
+    // Lista de acessos: o dono gerencia; cada pessoa pode ler só o próprio papel.
+    match /editors/{docEmail} {
+      allow read: if signedIn() && (isOwner() || email() == docEmail);
+      allow write: if isOwner();
+    }
+
+    // Pedidos de acesso: qualquer conta Google logada cria o próprio pedido; só o dono aprova ou nega.
+    match /requests/{docEmail} {
+      allow read: if signedIn() && (isOwner() || email() == docEmail);
+      allow create: if signedIn() && email() == docEmail
+        && request.resource.data.keys().hasOnly(['email', 'name', 'status', 'requestedAt'])
+        && request.resource.data.status == 'pending'
+        && request.resource.data.email == docEmail;
+      allow update, delete: if isOwner();
+    }
+  }
+}
